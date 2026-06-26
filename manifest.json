@@ -1,0 +1,22 @@
+{
+  "name": "App Control Center",
+  "short_name": "Control Center",
+  "description": "A centralized management dashboard for local and external PWAs.",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#1e1e1e",
+  "theme_color": "#1a1a1a",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='%2300adb5'><rect x='15' y='15' width='30' height='30' rx='5'/><rect x='55' y='15' width='30' height='30' rx='5'/><rect x='15' y='55' width='30' height='30' rx='5'/><circle cx='70' cy='70' r='15'/></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='%2300adb5'><rect x='15' y='15' width='30' height='30' rx='5'/><rect x='55' y='15' width='30' height='30' rx='5'/><rect x='15' y='55' width='30' height='30' rx='5'/><circle cx='70' cy='70' r='15'/></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}

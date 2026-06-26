@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script>
+        // Aggressive, blocking cache-buster script executed before page load
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(registrations => {
+                for (let registration of registrations) {
+                    registration.unregister();
+                }
+            });
+        }
+        if ('caches' in window) {
+            caches.keys().then(keys => {
+                keys.forEach(key => caches.delete(key));
+            });
+        }
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MSK-Dashboard</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a1a1a">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background-color: #1e1e1e;
+            color: #e0e0e0;
+            padding: 20px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            border-bottom: 1px solid #2d2d2d;
+            padding-bottom: 15px;
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            color: #00adb5;
+            font-weight: 600;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn {
+            background-color: #00adb5;
+            color: #fff;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .btn:hover { background-color: #007a80; }
+        
+        .btn-secondary {
+            background-color: #2a2a2a;
+            border: 1px solid #3a3a3a;
+            color: #aaa;
+        }
+        .btn-secondary:hover { background-color: #333333; color: #fff; }
+
+        .category-section {
+            margin-bottom: 30px;
+        }
+
+        .category-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .category-title {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #888;
+            padding-left: 8px;
+            border-left: 3px solid #00adb5;
+            line-height: 1;
+        }
+
+        .category-edit-link {
+            font-size: 0.75rem;
+            color: #00adb5;
+            text-transform: none;
+            letter-spacing: normal;
+            cursor: pointer;
+            background: none;
+            border: none;
+        }
+        .category-edit-link:hover { text-decoration: underline; color: #007a80; }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 15px;
+        }
+
+        .card {
+            background-color: #252525;
+            border: 1px solid #2d2d2d;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            position: relative;
+            transition: transform 0.2s, border-color 0.2s;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 120px;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            border-color: #00adb5;
+        }
+
+        .card-title {
+            font-size: 1rem;
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 5px;
+        }
+
+        .card-url {
+            font-size: 0.75rem;
+            color: #777;
+            word-break: break-all;
+            margin-bottom: 10px;
+        }
+
+        .card-type {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #00adb5;
+            background: rgba(0, 173, 181, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            align-self: center;
+        }
+
+        .card-actions {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            display: none;
+            gap: 4px;
+            background: #252525;
+            border-radius: 4px;
+            padding: 2px;
+        }
+
+        .card:hover .card-actions {
+            display: flex;
+        }
+
+        .action-icon-btn {
+            background: none;
+            border: none;
+            color: #555;
+            font-size: 1rem;
+            cursor: pointer;
+            padding: 2px 4px;
+            line-height: 1;
+        }
+
+        .action-icon-btn.edit-btn:hover { color: #00adb5; }
+        .action-icon-btn.delete-btn:hover { color: #cf6679; }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            z-index: 1000;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal {
+            background: #252525;
+            border: 1px solid #333;
+            padding: 20px;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 320px;
+        }
+
+        .modal h2 {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: #fff;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.8rem;
+            color: #888;
+            margin-bottom: 4px;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            background: #1e1e1e;
+            border: 1px solid #3a3a3a;
+            color: #fff;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 18px;
+        }
+
+        #fileInput {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>MSK-Dashboard</h1>
+        <div class="header-actions">
+            <button class="btn btn-secondary" id="exportBtn" title="Export Config">Export</button>
+            <button class="btn btn-secondary" id="importBtn" title="Import Config">Import</button>
+            <input type="file" id="fileInput" accept=".json">
+            <button class="btn" id="addAppBtn">+ Add App</button>
+        </div>
+    </header>
+
+    <main id="dashboardContainer"></main>
+
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <h2 id="modalTitle">Add Application</h2>
+            <form id="appForm">
+                <input type="hidden" id="editAppId">
+                <div class="form-group">
+                    <label for="appName">App Name</label>
+                    <input type="text" id="appName" required placeholder="e.g., Soda Counter">
+                </div>
+                <div class="form-group">
+                    <label for="appUrl">URL</label>
+                    <input type="url" id="appUrl" required placeholder="https://your-app.netlify.app">
+                </div>
+                <div class="form-group">
+                    <label for="appCategory">Category</label>
+                    <select id="appCategory">
+                        <option value="local">Local PWAs</option>
+                        <option value="tools">Dev Tools / Assets</option>
+                        <option value="external">External / Cloud</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="windowType">Window Mode</label>
+                    <select id="windowType">
+                        <option value="popup">Compact Utility Window</option>
+                        <option value="tab">Standard Browser Tab</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+                    <button type="submit" class="btn" id="saveFormBtn">Save App</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const defaultApps = [
+            { id: "1", name: "Dew Counter", url: "https://your-counter-app.netlify.app", category: "local", type: "popup" }
+        ];
+
+        let apps = [];
+        let categoryLabels = {
+            local: "Local PWAs",
+            tools: "Dev Tools / Assets",
+            external: "External / Cloud"
+        };
+
+        function loadCategories() {
+            const savedCats = localStorage.getItem('dashboardCategories');
+            if (savedCats) {
+                categoryLabels = JSON.parse(savedCats);
+            }
+        }
+
+        function saveCategories() {
+            localStorage.setItem('dashboardCategories', JSON.stringify(categoryLabels));
+        }
+
+        function loadApps() {
+            const saved = localStorage.getItem('dashboardAppsGrid');
+            if (saved) {
+                apps = JSON.parse(saved);
+            } else {
+                apps = [...defaultApps];
+                saveApps();
+            }
+            renderDashboard();
+        }
+
+        function saveApps() {
+            localStorage.setItem('dashboardAppsGrid', JSON.stringify(apps));
+        }
+
+        function renderDashboard() {
+            const container = document.getElementById('dashboardContainer');
+            container.innerHTML = '';
+
+            const groups = { local: [], tools: [], external: [] };
+            apps.forEach(app => {
+                if (groups[app.category]) {
+                    groups[app.category].push(app);
+                } else {
+                    groups.local.push(app);
+                }
+            });
+
+            Object.keys(groups).forEach(catKey => {
+                const catGroup = groups[catKey];
+                
+                const sect = document.createElement('section');
+                sect.className = 'category-section';
+
+                const catHeader = document.createElement('div');
+                catHeader.className = 'category-header';
+
+                const title = document.createElement('div');
+                title.className = 'category-title';
+                title.textContent = categoryLabels[catKey] || catKey;
+                catHeader.appendChild(title);
+
+                const renameLink = document.createElement('button');
+                renameLink.className = 'category-edit-link';
+                renameLink.textContent = '✎ Rename';
+                renameLink.addEventListener('click', () => {
+                    const currentName = categoryLabels[catKey];
+                    const newName = prompt(`Enter new name for category "${currentName}":`, currentName);
+                    if (newName && newName.trim() !== "") {
+                        categoryLabels[catKey] = newName.trim();
+                        saveCategories();
+                        renderDashboard();
+                    }
+                });
+                catHeader.appendChild(renameLink);
+                sect.appendChild(catHeader);
+
+                if (catGroup.length === 0) {
+                    const emptyMsg = document.createElement('div');
+                    emptyMsg.style.cssText = 'font-size:0.8rem; color:#555; padding-left:8px; font-style:italic;';
+                    emptyMsg.textContent = 'No applications mapped to this segment.';
+                    sect.appendChild(emptyMsg);
+                    container.appendChild(sect);
+                    return;
+                }
+
+                const grid = document.createElement('div');
+                grid.className = 'grid';
+
+                catGroup.forEach(app => {
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    const cleanUrl = app.url.replace(/^https?:\/\//, '');
+
+                    card.innerHTML = `
+                        <div class="card-actions">
+                            <button class="action-icon-btn edit-btn" data-id="${app.id}" title="Edit App">✎</button>
+                            <button class="action-icon-btn delete-btn" data-id="${app.id}" title="Remove App">&times;</button>
+                        </div>
+                        <div>
+                            <div class="card-title">${app.name}</div>
+                            <div class="card-url">${cleanUrl}</div>
+                        </div>
+                        <div class="card-type">${app.type === 'popup' ? 'Utility' : 'Tab'}</div>
+                    `;
+
+                    card.addEventListener('click', (e) => {
+                        if (e.target.closest('.card-actions')) return;
+                        
+                        if (app.type === 'popup') {
+                            window.open(
+                                app.url, 
+                                `win_${app.id}`, 
+                                "width=320,height=500,noopener=yes,noreferrer=yes,resizable=yes"
+                            );
+                        } else {
+                            window.open(app.url, '_blank');
+                        }
+                    });
+
+                    grid.appendChild(card);
+                });
+
+                sect.appendChild(grid);
+                container.appendChild(sect);
+            });
+
+            // Bind Delete Events
+            document.querySelectorAll('.action-icon-btn.delete-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const idToKill = btn.getAttribute('data-id');
+                    if (confirm('Remove this application link?')) {
+                        apps = apps.filter(a => a.id !== idToKill);
+                        saveApps();
+                        renderDashboard();
+                    }
+                });
+            });
+
+            // Bind Edit Events
+            document.querySelectorAll('.action-icon-btn.edit-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const idToEdit = btn.getAttribute('data-id');
+                    const targetApp = apps.find(a => a.id === idToEdit);
+                    if (targetApp) {
+                        openModalForEdit(targetApp);
+                    }
+                });
+            });
+        }
+
+        // Modal Operations
+        const modal = document.getElementById('modalOverlay');
+        const appForm = document.getElementById('appForm');
+
+        document.getElementById('addAppBtn').addEventListener('click', () => {
+            document.getElementById('modalTitle').textContent = "Add Application";
+            document.getElementById('editAppId').value = "";
+            appForm.reset();
+            modal.classList.add('active');
+        });
+
+        document.getElementById('cancelBtn').addEventListener('click', () => {
+            modal.classList.remove('active');
+            appForm.reset();
+        });
+
+        function openModalForEdit(app) {
+            document.getElementById('modalTitle').textContent = "Edit Application";
+            document.getElementById('editAppId').value = app.id;
+            document.getElementById('appName').value = app.name;
+            document.getElementById('appUrl').value = app.url;
+            document.getElementById('appCategory').value = app.category;
+            document.getElementById('windowType').value = app.type;
+            modal.classList.add('active');
+        }
+
+        appForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const appId = document.getElementById('editAppId').value;
+            
+            const appData = {
+                name: document.getElementById('appName').value,
+                url: document.getElementById('appUrl').value,
+                category: document.getElementById('appCategory').value,
+                type: document.getElementById('windowType').value
+            };
+
+            if (appId) {
+                // Update Existing
+                apps = apps.map(a => a.id === appId ? { ...a, ...appData } : a);
+            } else {
+                // Insert New
+                apps.push({
+                    id: Date.now().toString(),
+                    ...appData
+                });
+            }
+
+            saveApps();
+            renderDashboard();
+            modal.classList.remove('active');
+            appForm.reset();
+        });
+
+        // Backup Actions
+        document.getElementById('exportBtn').addEventListener('click', () => {
+            const exportPayload = { apps, categoryLabels };
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportPayload, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "control_center_config.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        });
+
+        const fileInput = document.getElementById('fileInput');
+        document.getElementById('importBtn').addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                try {
+                    const importedData = JSON.parse(evt.target.result);
+                    if (Array.isArray(importedData)) {
+                        if (confirm('Overwrite config grid with standard asset array?')) {
+                            apps = importedData;
+                            saveApps();
+                            renderDashboard();
+                        }
+                    } else if (importedData.apps && importedData.categoryLabels) {
+                        if (confirm('Overwrite launchpad apps and layout categories completely?')) {
+                            apps = importedData.apps;
+                            categoryLabels = importedData.categoryLabels;
+                            saveApps();
+                            saveCategories();
+                            renderDashboard();
+                        }
+                    } else {
+                        alert('Invalid configuration format detected.');
+                    }
+                } catch (err) {
+                    alert('Error parsing uploaded layout content.');
+                }
+                fileInput.value = '';
+            };
+            reader.readAsText(file);
+        });
+
+        loadCategories();
+        loadApps();
+    </script>
+</body>
+</html>
