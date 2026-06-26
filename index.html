@@ -108,6 +108,9 @@
         }
         .category-edit-link:hover { text-decoration: underline; color: #007a80; }
 
+        /* Delete uses a different hover color (red-ish) so it reads as a destructive action */
+        .category-edit-link.delete-cat:hover { color: #cf6679; }
+
         .grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
@@ -264,6 +267,8 @@
             <button class="btn btn-secondary" id="exportBtn" title="Export Config">Export</button>
             <button class="btn btn-secondary" id="importBtn" title="Import Config">Import</button>
             <input type="file" id="fileInput" accept=".json">
+            <!-- New: lets the user create a brand new category from anywhere, not tied to a specific section -->
+            <button class="btn btn-secondary" id="addCategoryBtn" title="Add a new category">+ Add Category</button>
             <button class="btn" id="addAppBtn">+ Add App</button>
         </div>
     </header>
@@ -285,11 +290,13 @@
                 </div>
                 <div class="form-group">
                     <label for="appCategory">Category</label>
-                    <select id="appCategory">
-                        <option value="local">Local PWAs</option>
-                        <option value="tools">Dev Tools / Assets</option>
-                        <option value="external">External / Cloud</option>
-                    </select>
+                    <!--
+                        This dropdown used to have 3 hardcoded options.
+                        Now it starts empty and gets filled in automatically by
+                        populateCategoryDropdown() so it always matches whatever
+                        categories actually exist (including new/deleted ones).
+                    -->
+                    <select id="appCategory"></select>
                 </div>
                 <div class="form-group">
                     <label for="windowType">Window Mode</label>
@@ -312,6 +319,10 @@
         ];
 
         let apps = [];
+
+        // categoryLabels is now the SINGLE source of truth for which categories exist.
+        // Whatever keys exist in this object ARE the categories. Add a key = new category.
+        // Delete a key = category gone. Nothing else needs to be touched.
         let categoryLabels = {
             local: "Local PWAs",
             tools: "Dev Tools / Assets",
@@ -327,6 +338,52 @@
 
         function saveCategories() {
             localStorage.setItem('dashboardCategories', JSON.stringify(categoryLabels));
+        }
+
+        // Turns a typed category name like "Side Projects!" into a safe internal
+        // key like "side-projects" that we can use as an object property and
+        // store on each app. The label shown on screen stays exactly as typed;
+        // this slug is just the internal "id" for the category.
+        function slugifyCategoryName(name) {
+            const base = name
+                .trim()
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/(^-|-$)/g, '');
+            return base || 'category';
+        }
+
+        // Makes sure a new category's internal key doesn't collide with an
+        // existing one. If "side-projects" is taken, tries "side-projects-2", etc.
+        function getUniqueCategoryKey(baseSlug) {
+            let slug = baseSlug;
+            let counter = 2;
+            while (Object.prototype.hasOwnProperty.call(categoryLabels, slug)) {
+                slug = `${baseSlug}-${counter}`;
+                counter++;
+            }
+            return slug;
+        }
+
+        // Rebuilds the "Category" dropdown in the Add/Edit App form so it always
+        // matches the current set of categories. Called on page load and any
+        // time a category is added or deleted.
+        function populateCategoryDropdown() {
+            const select = document.getElementById('appCategory');
+            const previousValue = select.value;
+            select.innerHTML = '';
+
+            Object.keys(categoryLabels).forEach(key => {
+                const option = document.createElement('option');
+                option.value = key;
+                option.textContent = categoryLabels[key];
+                select.appendChild(option);
+            });
+
+            // Try to keep whatever was selected before, if it still exists
+            if (Object.prototype.hasOwnProperty.call(categoryLabels, previousValue)) {
+                select.value = previousValue;
+            }
         }
 
         function loadApps() {
@@ -348,16 +405,26 @@
             const container = document.getElementById('dashboardContainer');
             container.innerHTML = '';
 
-            const groups = { local: [], tools: [], external: [] };
+            // Categories are now built dynamically from categoryLabels instead of
+            // a fixed { local, tools, external } object. This is the key change
+            // that makes add/delete actually possible.
+            const categoryKeys = Object.keys(categoryLabels);
+            const groups = {};
+            categoryKeys.forEach(key => { groups[key] = []; });
+
+            // If an app's category somehow doesn't exist anymore (shouldn't normally
+            // happen since delete reassigns apps, but this is a safety net), drop it
+            // into the first available category instead of losing it from view.
+            const fallbackKey = categoryKeys[0];
             apps.forEach(app => {
                 if (groups[app.category]) {
                     groups[app.category].push(app);
-                } else {
-                    groups.local.push(app);
+                } else if (fallbackKey) {
+                    groups[fallbackKey].push(app);
                 }
             });
 
-            Object.keys(groups).forEach(catKey => {
+            categoryKeys.forEach(catKey => {
                 const catGroup = groups[catKey];
                 
                 const sect = document.createElement('section');
@@ -371,6 +438,7 @@
                 title.textContent = categoryLabels[catKey] || catKey;
                 catHeader.appendChild(title);
 
+                // --- Rename button (unchanged from before) ---
                 const renameLink = document.createElement('button');
                 renameLink.className = 'category-edit-link';
                 renameLink.textContent = '✎ Rename';
@@ -384,6 +452,53 @@
                     }
                 });
                 catHeader.appendChild(renameLink);
+
+                // --- New: Delete button for this category ---
+                const deleteCatLink = document.createElement('button');
+                deleteCatLink.className = 'category-edit-link delete-cat';
+                deleteCatLink.textContent = '🗑 Delete';
+                deleteCatLink.addEventListener('click', () => {
+                    const allKeys = Object.keys(categoryLabels);
+
+                    // Block deleting the very last category. Every app needs
+                    // somewhere to live, so we always require at least one.
+                    if (allKeys.length <= 1) {
+                        alert('At least one category must remain. Add another category before deleting this one.');
+                        return;
+                    }
+
+                    const appsInThisCategory = apps.filter(a => a.category === catKey);
+                    const fallbackCatKey = allKeys.find(k => k !== catKey);
+                    const fallbackCatLabel = categoryLabels[fallbackCatKey];
+
+                    let confirmMessage;
+                    if (appsInThisCategory.length > 0) {
+                        confirmMessage = `"${categoryLabels[catKey]}" contains ${appsInThisCategory.length} app(s). ` +
+                            `Deleting it will move ${appsInThisCategory.length > 1 ? 'them' : 'it'} into "${fallbackCatLabel}". Continue?`;
+                    } else {
+                        confirmMessage = `Delete the empty category "${categoryLabels[catKey]}"?`;
+                    }
+
+                    if (!confirm(confirmMessage)) return;
+
+                    // Move any apps out of the category being deleted, so nothing
+                    // disappears from the dashboard.
+                    if (appsInThisCategory.length > 0) {
+                        apps = apps.map(a =>
+                            a.category === catKey ? { ...a, category: fallbackCatKey } : a
+                        );
+                        saveApps();
+                    }
+
+                    // Now it's safe to remove the category itself.
+                    delete categoryLabels[catKey];
+                    saveCategories();
+
+                    populateCategoryDropdown();
+                    renderDashboard();
+                });
+                catHeader.appendChild(deleteCatLink);
+
                 sect.appendChild(catHeader);
 
                 if (catGroup.length === 0) {
@@ -470,6 +585,7 @@
             document.getElementById('modalTitle').textContent = "Add Application";
             document.getElementById('editAppId').value = "";
             appForm.reset();
+            populateCategoryDropdown(); // make sure dropdown reflects latest categories
             modal.classList.add('active');
         });
 
@@ -478,11 +594,26 @@
             appForm.reset();
         });
 
+        // New: handles the "+ Add Category" button in the header
+        document.getElementById('addCategoryBtn').addEventListener('click', () => {
+            const name = prompt('Enter a name for the new category:');
+            if (!name || name.trim() === '') return;
+
+            const baseSlug = slugifyCategoryName(name);
+            const uniqueKey = getUniqueCategoryKey(baseSlug);
+
+            categoryLabels[uniqueKey] = name.trim();
+            saveCategories();
+            populateCategoryDropdown();
+            renderDashboard();
+        });
+
         function openModalForEdit(app) {
             document.getElementById('modalTitle').textContent = "Edit Application";
             document.getElementById('editAppId').value = app.id;
             document.getElementById('appName').value = app.name;
             document.getElementById('appUrl').value = app.url;
+            populateCategoryDropdown(); // refresh options before setting the value below
             document.getElementById('appCategory').value = app.category;
             document.getElementById('windowType').value = app.type;
             modal.classList.add('active');
@@ -550,6 +681,7 @@
                             categoryLabels = importedData.categoryLabels;
                             saveApps();
                             saveCategories();
+                            populateCategoryDropdown();
                             renderDashboard();
                         }
                     } else {
@@ -564,6 +696,7 @@
         });
 
         loadCategories();
+        populateCategoryDropdown();
         loadApps();
     </script>
 </body>
