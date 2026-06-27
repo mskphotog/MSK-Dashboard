@@ -85,6 +85,13 @@
             align-items: center;
             gap: 12px;
             margin-bottom: 12px;
+            cursor: grab;
+        }
+
+        /* Applied to a whole category section while you're dragging it
+           to a new position (parallels .card.dragging above). */
+        .category-section.dragging-category {
+            opacity: 0.4;
         }
 
         .category-title {
@@ -335,6 +342,12 @@
         // dropped into a different category's grid by accident.
         let draggedFromCategory = null;
 
+        // Same idea, but for dragging a whole category section to reorder
+        // categories themselves. Kept separate from draggedFromCategory so
+        // dragging a card and dragging a category header never get confused
+        // with each other.
+        let draggedCategoryKey = null;
+
         // categoryLabels is now the SINGLE source of truth for which categories exist.
         // Whatever keys exist in this object ARE the categories. Add a key = new category.
         // Delete a key = category gone. Nothing else needs to be touched.
@@ -479,6 +492,45 @@
             saveApps();
         }
 
+        // --- Category reordering helpers (separate from the app-card ones above) ---
+
+        // Categories stack one per row, so unlike the app grid we only need
+        // to compare vertical position to know where a dragged category
+        // should land - no left/right column math needed.
+        function getCategoryDragAfterElement(container, mouseY) {
+            const otherSections = [...container.querySelectorAll('.category-section:not(.dragging-category)')];
+
+            let closest = { offset: -Infinity, element: null };
+
+            otherSections.forEach(section => {
+                const box = section.getBoundingClientRect();
+                const offset = mouseY - box.top - box.height / 2;
+                // We only want sections whose center is below the cursor
+                // (offset < 0), and of those, the nearest one.
+                if (offset < 0 && offset > closest.offset) {
+                    closest = { offset, element: section };
+                }
+            });
+
+            return closest.element;
+        }
+
+        // Once a category section is dropped in its new spot, the DOM order
+        // of .category-section elements is already correct (we moved it
+        // live during dragover). This rebuilds categoryLabels with that same
+        // key order and saves it, so the new arrangement survives a reload.
+        function syncCategoryListOrderFromDOM(container) {
+            const orderedKeys = [...container.querySelectorAll('.category-section')]
+                .map(section => section.dataset.catKey);
+
+            const reordered = {};
+            orderedKeys.forEach(key => {
+                reordered[key] = categoryLabels[key];
+            });
+            categoryLabels = reordered;
+            saveCategories();
+        }
+
         function renderDashboard() {
             const container = document.getElementById('dashboardContainer');
             container.innerHTML = '';
@@ -507,9 +559,26 @@
                 
                 const sect = document.createElement('section');
                 sect.className = 'category-section';
+                // Used by syncCategoryListOrderFromDOM to read the new
+                // category order straight off the DOM after a drop.
+                sect.dataset.catKey = catKey;
 
                 const catHeader = document.createElement('div');
                 catHeader.className = 'category-header';
+
+                // The header bar is the drag handle for reordering whole
+                // categories. We deliberately don't make the entire section
+                // draggable, so clicking around inside the grid (to open an
+                // app, etc.) never gets mistaken for a drag.
+                catHeader.draggable = true;
+                catHeader.addEventListener('dragstart', () => {
+                    sect.classList.add('dragging-category');
+                    draggedCategoryKey = catKey;
+                });
+                catHeader.addEventListener('dragend', () => {
+                    sect.classList.remove('dragging-category');
+                    draggedCategoryKey = null;
+                });
 
                 const title = document.createElement('div');
                 title.className = 'category-title';
@@ -520,6 +589,7 @@
                 const renameLink = document.createElement('button');
                 renameLink.className = 'category-edit-link';
                 renameLink.textContent = '✎ Rename';
+                renameLink.draggable = false;
                 renameLink.addEventListener('click', () => {
                     const currentName = categoryLabels[catKey];
                     const newName = prompt(`Enter new name for category "${currentName}":`, currentName);
@@ -535,6 +605,7 @@
                 const deleteCatLink = document.createElement('button');
                 deleteCatLink.className = 'category-edit-link delete-cat';
                 deleteCatLink.textContent = '🗑 Delete';
+                deleteCatLink.draggable = false;
                 deleteCatLink.addEventListener('click', () => {
                     const allKeys = Object.keys(categoryLabels);
 
@@ -818,6 +889,34 @@
                 fileInput.value = '';
             };
             reader.readAsText(file);
+        });
+
+        // --- Category drag listeners (registered once, not per render) ---
+        // These live on the outer dashboard container, since category
+        // sections are its direct children. We check draggedCategoryKey so
+        // these only act during a category drag, never during an app-card
+        // drag (which is handled separately by each grid's own listeners).
+        const dashboardContainer = document.getElementById('dashboardContainer');
+
+        dashboardContainer.addEventListener('dragover', (e) => {
+            if (!draggedCategoryKey) return;
+            e.preventDefault();
+
+            const draggingSection = dashboardContainer.querySelector('.dragging-category');
+            if (!draggingSection) return;
+
+            const afterElement = getCategoryDragAfterElement(dashboardContainer, e.clientY);
+            if (afterElement == null) {
+                dashboardContainer.appendChild(draggingSection);
+            } else {
+                dashboardContainer.insertBefore(draggingSection, afterElement);
+            }
+        });
+
+        dashboardContainer.addEventListener('drop', (e) => {
+            if (!draggedCategoryKey) return;
+            e.preventDefault();
+            syncCategoryListOrderFromDOM(dashboardContainer);
         });
 
         loadCategories();
