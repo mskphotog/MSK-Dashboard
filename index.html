@@ -137,6 +137,15 @@
             border-color: #00adb5;
         }
 
+        /* Applied to a card while it is being dragged, so it's obvious
+           which one you're moving. The rest of the cards shuffle live
+           around it as you drag over them. */
+        .card.dragging {
+            opacity: 0.4;
+            border-style: dashed;
+            border-color: #00adb5;
+        }
+
         .card-title {
             font-size: 1rem;
             font-weight: bold;
@@ -320,6 +329,12 @@
 
         let apps = [];
 
+        // While a card is being dragged, this remembers which category grid
+        // it came from. We check this in the grid's dragover/drop handlers
+        // so a card can only be reordered within its own category, never
+        // dropped into a different category's grid by accident.
+        let draggedFromCategory = null;
+
         // categoryLabels is now the SINGLE source of truth for which categories exist.
         // Whatever keys exist in this object ARE the categories. Add a key = new category.
         // Delete a key = category gone. Nothing else needs to be touched.
@@ -399,6 +414,69 @@
 
         function saveApps() {
             localStorage.setItem('dashboardAppsGrid', JSON.stringify(apps));
+        }
+
+        // --- Drag-and-drop reordering helpers ---
+
+        // While dragging, this figures out which existing card the mouse is
+        // closest to, so we know where to slot the dragged card in. Cards
+        // sit in a CSS grid (multiple columns), so we can't just compare
+        // vertical position like a simple list - we compare distance to the
+        // center of every other card and also check whether that card is
+        // "ahead of" the cursor (further down, or same row but further right).
+        // Whatever this returns is where the dragged card gets inserted
+        // BEFORE. If it returns null, the dragged card goes at the very end.
+        function getDragAfterElement(grid, mouseX, mouseY) {
+            const otherCards = [...grid.querySelectorAll('.card:not(.dragging)')];
+
+            let closest = { distance: Infinity, element: null };
+
+            otherCards.forEach(card => {
+                const box = card.getBoundingClientRect();
+                const centerX = box.left + box.width / 2;
+                const centerY = box.top + box.height / 2;
+
+                // Is this card positioned after the cursor? Either it's in a
+                // lower row, or it's in roughly the same row but to the right.
+                const sameRow = Math.abs(centerY - mouseY) <= box.height / 2;
+                const isAfterCursor = (centerY > mouseY) || (sameRow && centerX > mouseX);
+
+                if (isAfterCursor) {
+                    const distance = Math.hypot(centerX - mouseX, centerY - mouseY);
+                    if (distance < closest.distance) {
+                        closest = { distance, element: card };
+                    }
+                }
+            });
+
+            return closest.element;
+        }
+
+        // Once a card is dropped, the DOM order inside that category's grid
+        // is already the new order (we moved elements live during dragover).
+        // This reads that DOM order and rewrites the `apps` array so the
+        // saved order matches what's on screen.
+        //
+        // categoryAppIds is the list of app ids that belonged to this
+        // category at the time it was rendered. We use that (rather than
+        // re-checking each app's `category` field) so this still works
+        // correctly for apps that landed in a category via the "fallback"
+        // safety net in renderDashboard.
+        function syncCategoryOrderFromDOM(grid, categoryAppIds) {
+            const newIdOrder = [...grid.querySelectorAll('.card')].map(card => card.dataset.id);
+            const idsInThisCategory = new Set(categoryAppIds);
+
+            let nextIndex = 0;
+            apps = apps.map(app => {
+                if (!idsInThisCategory.has(app.id)) {
+                    return app; // untouched, belongs to a different category
+                }
+                const idForThisSlot = newIdOrder[nextIndex];
+                nextIndex++;
+                return apps.find(a => a.id === idForThisSlot);
+            });
+
+            saveApps();
         }
 
         function renderDashboard() {
@@ -518,8 +596,14 @@
                     card.className = 'card';
                     const cleanUrl = app.url.replace(/^https?:\/\//, '');
 
+                    // draggable + data-id are what make this card reorderable.
+                    // data-id lets syncCategoryOrderFromDOM read the new order
+                    // straight off the DOM after a drop.
+                    card.draggable = true;
+                    card.dataset.id = app.id;
+
                     card.innerHTML = `
-                        <div class="card-actions">
+                        <div class="card-actions" draggable="false">
                             <button class="action-icon-btn edit-btn" data-id="${app.id}" title="Edit App">✎</button>
                             <button class="action-icon-btn delete-btn" data-id="${app.id}" title="Remove App">&times;</button>
                         </div>
@@ -544,7 +628,48 @@
                         }
                     });
 
+                    // --- Drag handlers for this card ---
+                    card.addEventListener('dragstart', () => {
+                        card.classList.add('dragging');
+                        draggedFromCategory = catKey;
+                    });
+
+                    card.addEventListener('dragend', () => {
+                        card.classList.remove('dragging');
+                        draggedFromCategory = null;
+                    });
+
                     grid.appendChild(card);
+                });
+
+                // --- Drag handlers for the grid itself (one category's worth of cards) ---
+                // dragover fires repeatedly as the mouse moves over the grid; we use
+                // it to live-shuffle the dragged card to its prospective new spot,
+                // which is the same "things slide out of the way" feel most
+                // drag-and-drop lists have.
+                grid.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    if (draggedFromCategory !== catKey) return; // ignore drags from other categories
+
+                    const dragging = grid.querySelector('.dragging');
+                    if (!dragging) return;
+
+                    const afterElement = getDragAfterElement(grid, e.clientX, e.clientY);
+                    if (afterElement == null) {
+                        grid.appendChild(dragging);
+                    } else {
+                        grid.insertBefore(dragging, afterElement);
+                    }
+                });
+
+                grid.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    if (draggedFromCategory !== catKey) return;
+
+                    // catGroup is exactly the set of apps that were in this
+                    // category when we rendered it, which is what we need to
+                    // correctly rewrite their order in the apps array.
+                    syncCategoryOrderFromDOM(grid, catGroup.map(a => a.id));
                 });
 
                 sect.appendChild(grid);
