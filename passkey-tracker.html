@@ -141,14 +141,8 @@
   }
   td textarea { resize: vertical; min-height: 2em; }
 
-  td input[type="text"]:disabled, td textarea:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
-  }
-
   .checkbox-cell { text-align: center; }
   .checkbox-cell input { width: 18px; height: 18px; cursor: pointer; }
-  .checkbox-cell input:disabled { cursor: not-allowed; opacity: 0.45; }
 
   .badge {
     display: inline-block;
@@ -288,8 +282,6 @@
     filtered.forEach(acc => {
       const tr = document.createElement('tr');
 
-      const locked = !acc.passkey;
-
       const siteTd = document.createElement('td');
       const siteInput = document.createElement('input');
       siteInput.type = 'text';
@@ -303,7 +295,6 @@
       urlInput.type = 'text';
       urlInput.placeholder = 'https://…';
       urlInput.value = acc.url || '';
-      urlInput.disabled = locked;
       urlInput.addEventListener('input', () => { acc.url = urlInput.value; saveAccounts(); });
       urlTd.appendChild(urlInput);
 
@@ -312,7 +303,6 @@
       userInput.type = 'text';
       userInput.placeholder = 'username or email';
       userInput.value = acc.username || '';
-      userInput.disabled = locked;
       userInput.addEventListener('input', () => { acc.username = userInput.value; saveAccounts(); });
       userTd.appendChild(userInput);
 
@@ -322,11 +312,7 @@
       passkeyCb.type = 'checkbox';
       passkeyCb.title = 'Site uses passkey?';
       passkeyCb.checked = !!acc.passkey;
-      passkeyCb.addEventListener('change', () => {
-        acc.passkey = passkeyCb.checked;
-        saveAccounts();
-        render();
-      });
+      passkeyCb.addEventListener('change', () => { acc.passkey = passkeyCb.checked; saveAccounts(); });
       passkeyTd.appendChild(passkeyCb);
 
       const pwTd = document.createElement('td');
@@ -334,7 +320,6 @@
       const pwCb = document.createElement('input');
       pwCb.type = 'checkbox';
       pwCb.checked = !!acc.strongPassword;
-      pwCb.disabled = locked;
       pwCb.addEventListener('change', () => { acc.strongPassword = pwCb.checked; saveAccounts(); });
       pwTd.appendChild(pwCb);
 
@@ -343,7 +328,6 @@
       notesInput.rows = 1;
       notesInput.placeholder = 'notes';
       notesInput.value = acc.notes || '';
-      notesInput.disabled = locked;
       notesInput.addEventListener('input', () => { acc.notes = notesInput.value; saveAccounts(); });
       notesTd.appendChild(notesInput);
 
