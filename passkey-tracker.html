@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Passkey & Password Tracker</title>
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --surface: #ffffff;
+    --border: #dde1e6;
+    --text: #1b1f24;
+    --muted: #6b7280;
+    --accent: #2f6fed;
+    --accent-soft: #e8f0fe;
+    --good: #1a7f37;
+    --warn: #b45309;
+    --danger: #c92a2a;
+    --danger-soft: #fdecec;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --surface: #1d2026;
+      --border: #2e323a;
+      --text: #e7e9ea;
+      --muted: #9aa1ab;
+      --accent: #6ea0ff;
+      --accent-soft: #22314f;
+      --good: #3fb950;
+      --warn: #e3a008;
+      --danger: #f2707a;
+      --danger-soft: #3a2222;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 2rem 1rem 4rem;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; }
+  h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
+  .subtitle { color: var(--muted); margin-top: 0; margin-bottom: 1.5rem; font-size: 0.95rem; }
+
+  .stats {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+  }
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    flex: 1;
+    min-width: 140px;
+  }
+  .stat .num { font-size: 1.4rem; font-weight: 600; }
+  .stat .label { font-size: 0.8rem; color: var(--muted); }
+
+  .toolbar {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+    align-items: center;
+  }
+  .toolbar input[type="search"] {
+    flex: 1;
+    min-width: 180px;
+    padding: 0.55rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 0.95rem;
+  }
+  button {
+    font-family: inherit;
+    font-size: 0.9rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    padding: 0.55rem 0.9rem;
+    cursor: pointer;
+  }
+  button:hover { border-color: var(--accent); }
+  button.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }
+  button.primary:hover { opacity: 0.92; }
+  input[type="file"] { display: none; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  thead th {
+    text-align: left;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--muted);
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+  tbody td {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: color-mix(in srgb, var(--accent-soft) 60%, transparent); }
+
+  td input[type="text"], td textarea {
+    width: 100%;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.9rem;
+    padding: 0.3rem 0.4rem;
+    border-radius: 6px;
+  }
+  td input[type="text"]:hover, td textarea:hover { border-color: var(--border); }
+  td input[type="text"]:focus, td textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: var(--surface);
+  }
+  td textarea { resize: vertical; min-height: 2em; }
+
+  td input[type="text"]:disabled, td textarea:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  .checkbox-cell { text-align: center; }
+  .checkbox-cell input { width: 18px; height: 18px; cursor: pointer; }
+  .checkbox-cell input:disabled { cursor: not-allowed; opacity: 0.45; }
+
+  .badge {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    margin-left: 0.4rem;
+  }
+  .badge.good { background: color-mix(in srgb, var(--good) 18%, transparent); color: var(--good); }
+  .badge.warn { background: color-mix(in srgb, var(--warn) 18%, transparent); color: var(--warn); }
+
+  .row-actions { text-align: right; white-space: nowrap; }
+  .row-actions button {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.8rem;
+    color: var(--danger);
+    border-color: transparent;
+  }
+  .row-actions button:hover { background: var(--danger-soft); border-color: var(--danger); }
+
+  .empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--muted);
+  }
+
+  .footer-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .file-controls { display: flex; gap: 0.5rem; }
+  .save-indicator {
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Passkey & Password Tracker</h1>
+  <p class="subtitle">Track which accounts have a passkey set up and a strong (30+ character) password. Everything stays on this device — nothing is sent anywhere.</p>
+
+  <div class="stats">
+    <div class="stat"><div class="num" id="statTotal">0</div><div class="label">Accounts</div></div>
+    <div class="stat"><div class="num" id="statPasskey">0</div><div class="label">Passkey enabled</div></div>
+    <div class="stat"><div class="num" id="statPassword">0</div><div class="label">30+ char password</div></div>
+    <div class="stat"><div class="num" id="statBoth">0</div><div class="label">Fully secured</div></div>
+  </div>
+
+  <div class="toolbar">
+    <input type="search" id="searchBox" placeholder="Search accounts or usernames…">
+    <button class="primary" id="addRowBtn">+ Add account</button>
+  </div>
+
+  <table id="accountTable">
+    <thead>
+      <tr>
+        <th style="width:18%">Account / Site</th>
+        <th style="width:16%">URL</th>
+        <th style="width:15%">Username / Login</th>
+        <th style="width:12%">Site uses passkey?</th>
+        <th style="width:13%">30+ char password</th>
+        <th style="width:20%">Notes</th>
+        <th style="width:6%"></th>
+      </tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+  <div class="empty-state" id="emptyState" style="display:none">No accounts yet. Click "Add account" to start tracking.</div>
+
+  <div class="footer-actions">
+    <span class="save-indicator" id="saveIndicator">Saved locally in this browser</span>
+    <div class="file-controls">
+      <button id="exportBtn">Export backup (JSON)</button>
+      <button id="importBtn">Import backup</button>
+      <input type="file" id="importFile" accept="application/json">
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const STORAGE_KEY = 'passkeyTrackerAccounts';
+  const tableBody = document.getElementById('tableBody');
+  const emptyState = document.getElementById('emptyState');
+  const searchBox = document.getElementById('searchBox');
+
+  function loadAccounts() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveAccounts() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(accounts));
+    updateStats();
+  }
+
+  function makeId() {
+    return 'acc_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+  }
+
+  let accounts = loadAccounts();
+
+  function updateStats() {
+    const total = accounts.length;
+    const passkey = accounts.filter(a => a.passkey).length;
+    const password = accounts.filter(a => a.strongPassword).length;
+    const both = accounts.filter(a => a.passkey && a.strongPassword).length;
+    document.getElementById('statTotal').textContent = total;
+    document.getElementById('statPasskey').textContent = passkey;
+    document.getElementById('statPassword').textContent = password;
+    document.getElementById('statBoth').textContent = both;
+  }
+
+  function render() {
+    const query = searchBox.value.trim().toLowerCase();
+    tableBody.innerHTML = '';
+
+    const filtered = accounts.filter(a => {
+      if (!query) return true;
+      return (a.site || '').toLowerCase().includes(query) ||
+             (a.username || '').toLowerCase().includes(query) ||
+             (a.url || '').toLowerCase().includes(query);
+    });
+
+    emptyState.style.display = accounts.length === 0 ? 'block' : 'none';
+
+    filtered.forEach(acc => {
+      const tr = document.createElement('tr');
+
+      const locked = !acc.passkey;
+
+      const siteTd = document.createElement('td');
+      const siteInput = document.createElement('input');
+      siteInput.type = 'text';
+      siteInput.placeholder = 'e.g. Google';
+      siteInput.value = acc.site || '';
+      siteInput.addEventListener('input', () => { acc.site = siteInput.value; saveAccounts(); });
+      siteTd.appendChild(siteInput);
+
+      const urlTd = document.createElement('td');
+      const urlInput = document.createElement('input');
+      urlInput.type = 'text';
+      urlInput.placeholder = 'https://…';
+      urlInput.value = acc.url || '';
+      urlInput.disabled = locked;
+      urlInput.addEventListener('input', () => { acc.url = urlInput.value; saveAccounts(); });
+      urlTd.appendChild(urlInput);
+
+      const userTd = document.createElement('td');
+      const userInput = document.createElement('input');
+      userInput.type = 'text';
+      userInput.placeholder = 'username or email';
+      userInput.value = acc.username || '';
+      userInput.disabled = locked;
+      userInput.addEventListener('input', () => { acc.username = userInput.value; saveAccounts(); });
+      userTd.appendChild(userInput);
+
+      const passkeyTd = document.createElement('td');
+      passkeyTd.className = 'checkbox-cell';
+      const passkeyCb = document.createElement('input');
+      passkeyCb.type = 'checkbox';
+      passkeyCb.title = 'Site uses passkey?';
+      passkeyCb.checked = !!acc.passkey;
+      passkeyCb.addEventListener('change', () => {
+        acc.passkey = passkeyCb.checked;
+        saveAccounts();
+        render();
+      });
+      passkeyTd.appendChild(passkeyCb);
+
+      const pwTd = document.createElement('td');
+      pwTd.className = 'checkbox-cell';
+      const pwCb = document.createElement('input');
+      pwCb.type = 'checkbox';
+      pwCb.checked = !!acc.strongPassword;
+      pwCb.disabled = locked;
+      pwCb.addEventListener('change', () => { acc.strongPassword = pwCb.checked; saveAccounts(); });
+      pwTd.appendChild(pwCb);
+
+      const notesTd = document.createElement('td');
+      const notesInput = document.createElement('textarea');
+      notesInput.rows = 1;
+      notesInput.placeholder = 'notes';
+      notesInput.value = acc.notes || '';
+      notesInput.disabled = locked;
+      notesInput.addEventListener('input', () => { acc.notes = notesInput.value; saveAccounts(); });
+      notesTd.appendChild(notesInput);
+
+      const actionsTd = document.createElement('td');
+      actionsTd.className = 'row-actions';
+      const delBtn = document.createElement('button');
+      delBtn.textContent = 'Delete';
+      delBtn.addEventListener('click', () => {
+        if (confirm(`Remove "${acc.site || 'this account'}"?`)) {
+          accounts = accounts.filter(a => a.id !== acc.id);
+          saveAccounts();
+          render();
+        }
+      });
+      actionsTd.appendChild(delBtn);
+
+      tr.appendChild(siteTd);
+      tr.appendChild(urlTd);
+      tr.appendChild(userTd);
+      tr.appendChild(passkeyTd);
+      tr.appendChild(pwTd);
+      tr.appendChild(notesTd);
+      tr.appendChild(actionsTd);
+      tableBody.appendChild(tr);
+    });
+
+    updateStats();
+  }
+
+  document.getElementById('addRowBtn').addEventListener('click', () => {
+    accounts.unshift({ id: makeId(), site: '', url: '', username: '', passkey: false, strongPassword: false, notes: '' });
+    saveAccounts();
+    render();
+    const firstInput = tableBody.querySelector('input[type="text"]');
+    if (firstInput) firstInput.focus();
+  });
+
+  searchBox.addEventListener('input', render);
+
+  document.getElementById('exportBtn').addEventListener('click', () => {
+    const blob = new Blob([JSON.stringify(accounts, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const stamp = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `passkey-tracker-backup-${stamp}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  const importFile = document.getElementById('importFile');
+  document.getElementById('importBtn').addEventListener('click', () => importFile.click());
+  importFile.addEventListener('change', () => {
+    const file = importFile.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(reader.result);
+        if (!Array.isArray(parsed)) throw new Error('not an array');
+        const merge = accounts.length > 0
+          ? confirm('Merge with existing accounts? Click Cancel to replace everything instead.')
+          : true;
+        const normalized = parsed.map(a => ({
+          id: a.id || makeId(),
+          site: a.site || '',
+          url: a.url || '',
+          username: a.username || '',
+          passkey: !!a.passkey,
+          strongPassword: !!a.strongPassword,
+          notes: a.notes || ''
+        }));
+        accounts = merge ? accounts.concat(normalized) : normalized;
+        saveAccounts();
+        render();
+      } catch (e) {
+        alert('That file does not look like a valid backup.');
+      } finally {
+        importFile.value = '';
+      }
+    };
+    reader.readAsText(file);
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
