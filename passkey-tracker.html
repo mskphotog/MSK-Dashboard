@@ -259,7 +259,7 @@
     const total = accounts.length;
     const passkey = accounts.filter(a => a.passkey).length;
     const password = accounts.filter(a => a.strongPassword).length;
-    const both = accounts.filter(a => a.passkey && a.strongPassword).length;
+    const both = accounts.filter(a => a.passkey || a.strongPassword).length;
     document.getElementById('statTotal').textContent = total;
     document.getElementById('statPasskey').textContent = passkey;
     document.getElementById('statPassword').textContent = password;
