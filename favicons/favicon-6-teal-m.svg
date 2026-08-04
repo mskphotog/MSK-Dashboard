@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Solid teal background -->
+  <rect width="32" height="32" rx="6" fill="#00adb5"/>
+  <!-- White M letter -->
+  <path d="M5 24 L5 8 L11 18 L16 10 L21 18 L27 8 L27 24" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

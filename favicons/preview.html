@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Favicon Options — MSK Dashboard</title>
+<style>
+  body { background: #111; color: #e0e0e0; font-family: Arial, sans-serif; padding: 40px; margin: 0; }
+  h1 { color: #00adb5; margin-bottom: 8px; }
+  p { color: #888; margin-bottom: 40px; }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; max-width: 900px; }
+  .card {
+    background: #1e1e1e;
+    border: 1px solid #2d2d2d;
+    border-radius: 10px;
+    padding: 28px 20px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .card:hover { border-color: #00adb5; }
+  .card.selected { border-color: #00adb5; background: rgba(0,173,181,0.08); }
+  .card img {
+    width: 64px;
+    height: 64px;
+    display: block;
+    margin: 0 auto 16px;
+    image-rendering: pixelated;
+  }
+  .card .label { font-size: 0.85rem; color: #888; margin-bottom: 4px; }
+  .card .name { font-size: 0.95rem; font-weight: bold; color: #e0e0e0; }
+  .size-row { display: flex; gap: 12px; justify-content: center; margin-top: 12px; align-items: flex-end; }
+  .size-row img { display: block; margin: 0; }
+  .size-row .s32 { width: 32px; height: 32px; }
+  .size-row .s16 { width: 16px; height: 16px; }
+</style>
+</head>
+<body>
+<h1>MSK Dashboard — Favicon Options</h1>
+<p>Click a card to select it. Each card shows the icon at 64px, 32px, and 16px.</p>
+<div class="grid">
+
+  <div class="card" onclick="this.classList.toggle('selected')">
+    <img src="favicon-1-grid.svg" alt="2x2 Grid">
+    <div class="size-row">
+      <img src="favicon-1-grid.svg" class="s32">
+      <img src="favicon-1-grid.svg" class="s16">
+    </div>
+    <div class="label">#1</div>
+    <div class="name">2×2 Grid</div>
+  </div>
+
+  <div class="card" onclick="this.classList.toggle('selected')">
+    <img src="favicon-2-monogram.svg" alt="Monogram">
+    <div class="size-row">
+      <img src="favicon-2-monogram.svg" class="s32">
+      <img src="favicon-2-monogram.svg" class="s16">
+    </div>
+    <div class="label">#2</div>
+    <div class="name">MSK Monogram</div>
+  </div>
+
+  <div class="card" onclick="this.classList.toggle('selected')">
+    <img src="favicon-3-teal-circle.svg" alt="Teal Circle">
+    <div class="size-row">
+      <img src="favicon-3-teal-circle.svg" class="s32">
+      <img src="favicon-3-teal-circle.svg" class="s16">
+    </div>
+    <div class="label">#3</div>
+    <div class="name">Teal Circle Dots</div>
+  </div>
+
+  <div class="card" onclick="this.classList.toggle('selected')">
+    <img src="favicon-4-dashboard-bars.svg" alt="Bar Chart">
+    <div class="size-row">
+      <img src="favicon-4-dashboard-bars.svg" class="s32">
+      <img src="favicon-4-dashboard-bars.svg" class="s16">
+    </div>
+    <div class="label">#4</div>
+    <div class="name">Dashboard Bars</div>
+  </div>
+
+  <div class="card" onclick="this.classList.toggle('selected')">
+    <img src="favicon-5-3x3-grid.svg" alt="3x3 Grid">
+    <div class="size-row">
+      <img src="favicon-5-3x3-grid.svg" class="s32">
+      <img src="favicon-5-3x3-grid.svg" class="s16">
+    </div>
+    <div class="label">#5</div>
+    <div class="name">3×3 Dot Grid</div>
+  </div>
+
+  <div class="card" onclick="this.classList.toggle('selected')">
+    <img src="favicon-6-teal-m.svg" alt="Teal M">
+    <div class="size-row">
+      <img src="favicon-6-teal-m.svg" class="s32">
+      <img src="favicon-6-teal-m.svg" class="s16">
+    </div>
+    <div class="label">#6</div>
+    <div class="name">Teal "M" Letter</div>
+  </div>
+
+  <div class="card" onclick="this.classList.toggle('selected')">
+    <img src="favicon-7-compass.svg" alt="Compass">
+    <div class="size-row">
+      <img src="favicon-7-compass.svg" class="s32">
+      <img src="favicon-7-compass.svg" class="s16">
+    </div>
+    <div class="label">#7</div>
+    <div class="name">Compass / Nav</div>
+  </div>
+
+  <div class="card" onclick="this.classList.toggle('selected')">
+    <img src="favicon-8-cards-stacked.svg" alt="Stacked Cards">
+    <div class="size-row">
+      <img src="favicon-8-cards-stacked.svg" class="s32">
+      <img src="favicon-8-cards-stacked.svg" class="s16">
+    </div>
+    <div class="label">#8</div>
+    <div class="name">Stacked Cards</div>
+  </div>
+
+</div>
+</body>
+</html>

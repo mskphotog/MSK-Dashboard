@@ -1,0 +1,236 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-04T00:00:00.000Z",
+  "title": "Design System: MSK-Dashboard",
+  "extensions": {
+    "colorMeta": {
+      "instrument-blue": {
+        "role": "primary",
+        "displayName": "Instrument Blue",
+        "canonical": "#3654d1",
+        "tonalRamp": ["#0d1433", "#141f4d", "#1c2b6b", "#243789", "#2a41a8", "#3654d1", "#7b93e8", "#c3cef5"]
+      },
+      "instrument-blue-deep": {
+        "role": "primary",
+        "displayName": "Instrument Blue Deep",
+        "canonical": "#2a41a8",
+        "tonalRamp": ["#0a1029", "#10193f", "#162356", "#1e2d7d", "#2a41a8", "#4a63c9", "#8ba1eb", "#ccd6f7"]
+      },
+      "instrument-blue-wash": {
+        "role": "primary",
+        "displayName": "Instrument Blue Wash",
+        "canonical": "#eef0fb",
+        "tonalRamp": ["#1d2340", "#2b3457", "#3c4873", "#5b6a9c", "#8794c4", "#b4bee1", "#d9dff3", "#eef0fb"]
+      },
+      "patina": {
+        "role": "secondary",
+        "displayName": "Patina",
+        "canonical": "#9c5e26",
+        "tonalRamp": ["#2b1a0a", "#432810", "#5c3717", "#7a481e", "#9c5e26", "#c98c46", "#e0b47f", "#f2ddc4"]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Paper",
+        "canonical": "#f2f0ec",
+        "tonalRamp": ["#1a1815", "#26231f", "#3a352d", "#5c564b", "#847d6f", "#aca496", "#d4cec2", "#f2f0ec"]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Surface",
+        "canonical": "#ffffff",
+        "tonalRamp": ["#1c1c1c", "#2e2e2e", "#4a4a4a", "#6e6e6e", "#949494", "#bcbcbc", "#e0e0e0", "#ffffff"]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#24211d",
+        "tonalRamp": ["#100f0d", "#24211d", "#3a352d", "#544d42", "#79746a", "#a39d90", "#c7c2b4", "#e4e0d6"]
+      },
+      "rule": {
+        "role": "neutral",
+        "displayName": "Rule",
+        "canonical": "#e4e0d6",
+        "tonalRamp": ["#1f1d18", "#332f27", "#4d4739", "#6e6653", "#948b74", "#bab19c", "#e4e0d6", "#f5f3ee"]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted",
+        "canonical": "#79746a",
+        "tonalRamp": ["#1a1815", "#2b2822", "#3f3b33", "#5a554a", "#79746a", "#a39d90", "#c7c2b4", "#e8e4dc"]
+      },
+      "faint": {
+        "role": "neutral",
+        "displayName": "Faint",
+        "canonical": "#c7c2b4",
+        "tonalRamp": ["#1c1a16", "#2e2b24", "#454136", "#635d4d", "#877f6b", "#aaa28d", "#c7c2b4", "#eae7df"]
+      },
+      "alert": {
+        "role": "tertiary",
+        "displayName": "Alert",
+        "canonical": "#b3261e",
+        "tonalRamp": ["#2e0a07", "#4a100c", "#671712", "#8d1e18", "#b3261e", "#d95c54", "#f2b8b5", "#fbe4e2"]
+      },
+      "paper-dark": { "role": "neutral", "displayName": "Paper Dark", "canonical": "#1a1815" },
+      "surface-dark": { "role": "neutral", "displayName": "Surface Dark", "canonical": "#24211d" },
+      "ink-dark": { "role": "neutral", "displayName": "Ink Dark", "canonical": "#f2f0ec" },
+      "rule-dark": { "role": "neutral", "displayName": "Rule Dark", "canonical": "#3a352d" },
+      "muted-dark": { "role": "neutral", "displayName": "Muted Dark", "canonical": "#a39d90" },
+      "faint-dark": { "role": "neutral", "displayName": "Faint Dark", "canonical": "#6b6558" },
+      "instrument-blue-dark": { "role": "primary", "displayName": "Instrument Blue Dark", "canonical": "#7b93e8" },
+      "instrument-blue-deep-dark": { "role": "primary", "displayName": "Instrument Blue Deep Dark", "canonical": "#9aabee" },
+      "instrument-blue-wash-dark": { "role": "primary", "displayName": "Instrument Blue Wash Dark", "canonical": "#262b45" },
+      "patina-dark": { "role": "secondary", "displayName": "Patina Dark", "canonical": "#c98c46" },
+      "alert-dark": { "role": "tertiary", "displayName": "Alert Dark", "canonical": "#f2b8b5" }
+    },
+    "typographyMeta": {
+      "headline": { "displayName": "Headline", "purpose": "The page title, set in Instrument Blue. One per document; it identifies the room rather than inviting a click." },
+      "title": { "displayName": "Title", "purpose": "Modal headings only." },
+      "body": { "displayName": "Body", "purpose": "Card names — the primary scanning target of the product, bold at body size rather than large and light." },
+      "label": { "displayName": "Label", "purpose": "Uppercase structural labels: category names in Patina, and the smaller window-mode chip. Never on buttons or running text." },
+      "caption": { "displayName": "Caption", "purpose": "Card URLs and form labels in Muted. Requires a white Surface backing to clear AA." },
+      "chip": { "displayName": "Chip", "purpose": "The window-mode marker. Uppercase with 0.5px tracking, and it appears only on the minority case — see The Exception-Only Rule." }
+    },
+    "shadows": [
+      { "name": "seat", "value": "0 1px 3px rgba(36, 33, 29, 0.06)", "purpose": "Cards at rest. Keeps a white panel from looking pasted onto the paper. Ambient seating, not elevation — never strengthen it to imply hierarchy." },
+      { "name": "lift", "value": "0 4px 10px rgba(36, 33, 29, 0.1)", "purpose": "Cards under the cursor, paired with translateY(-2px)." },
+      { "name": "press", "value": "0 1px 2px rgba(54, 84, 209, 0.35)", "purpose": "Primary buttons. Blue-tinted and tight, so it reads as a pressable key rather than a raised plane." },
+      { "name": "float", "value": "0 8px 24px rgba(36, 33, 29, 0.15)", "purpose": "Modals only — the single genuinely elevated surface in the system." },
+      { "name": "focus-ring", "value": "0 0 0 3px rgba(54, 84, 209, 0.15)", "purpose": "Focused inputs. A ring with no offset; never treated as a shadow." }
+    ],
+    "motion": [
+      { "name": "state-fast", "value": "0.2s", "purpose": "The system's only duration. Card transform/border/shadow, button color, modal opacity all share it." },
+      { "name": "card-lift", "value": "translateY(-2px)", "purpose": "The single positional move in the system, on card hover. Buttons never move." },
+      { "name": "drag-ghost", "value": "opacity 0.4 + 1px dashed instrument-blue", "purpose": "Dragged cards and dragged category sections. The element becomes a marked hole showing where it will land." }
+    ],
+    "breakpoints": [
+      { "name": "none", "value": "intrinsic", "purpose": "The system defines no media queries. The card grid reflows via repeat(auto-fill, minmax(160px, 1fr)), adapting from a popup utility window to a wide desktop with no code path of its own." }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The single most likely action on a surface — on the hub, '+ Add App' and nothing else.",
+      "html": "<button class=\"ds-btn-primary\">+ Add App</button>",
+      "css": ".ds-btn-primary { background-color: #3654d1; color: #ffffff; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 0.9rem; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; box-shadow: 0 1px 2px rgba(54, 84, 209, 0.35); transition: background-color 0.2s; } .ds-btn-primary:hover { background-color: #2a41a8; } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(54, 84, 209, 0.35); } .ds-btn-primary:active { background-color: #2a41a8; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Every action that isn't the primary one. Adopts the signal color wholesale on hover.",
+      "html": "<button class=\"ds-btn-secondary\">Export</button>",
+      "css": ".ds-btn-secondary { background-color: #ffffff; border: 1px solid #e4e0d6; color: #24211d; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 0.9rem; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; box-shadow: none; transition: background-color 0.2s, border-color 0.2s, color 0.2s; } .ds-btn-secondary:hover { background-color: #eef0fb; border-color: #3654d1; color: #3654d1; } .ds-btn-secondary:focus-visible { outline: none; border-color: #3654d1; box-shadow: 0 0 0 3px rgba(54, 84, 209, 0.15); }"
+    },
+    {
+      "name": "App Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "The signature component, and an <a> rather than a <div> so keyboard focus, status-bar preview, context menu and modified clicks are native. Monogram left, text right, chip only on popup entries.",
+      "html": "<a class=\"ds-card\" href=\"#\"><span class=\"ds-card-mark\">CL</span><span class=\"ds-card-body\"><span class=\"ds-card-title\">Cloudflare</span><span class=\"ds-card-host\">dash.cloudflare.com</span></span></a>",
+      "css": ".ds-card { position: relative; display: flex; align-items: flex-start; gap: 10px; background-color: #ffffff; border: 1px solid #cdc4ae; border-radius: 8px; padding: 15px; min-height: 104px; width: 220px; text-decoration: none; color: inherit; box-shadow: 0 1px 3px rgba(36, 33, 29, 0.06); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s; } .ds-card:hover { transform: translateY(-2px); border-color: #3654d1; box-shadow: 0 4px 10px rgba(36, 33, 29, 0.1); } .ds-card:focus-visible { outline: 2px solid #3654d1; outline-offset: 2px; border-color: #3654d1; } .ds-card-mark { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; flex: none; border-radius: 6px; background-color: #f2f0ec; border: 1px solid #e4e0d6; color: #24211d; font-size: 0.9rem; font-weight: 700; line-height: 1; } .ds-card-body { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 3px; } .ds-card-title { font-size: 1rem; font-weight: bold; color: #24211d; overflow-wrap: anywhere; } .ds-card-host { font-size: 0.75rem; color: #79746a; overflow-wrap: anywhere; }"
+    },
+    {
+      "name": "Monogram Tile",
+      "kind": "custom",
+      "refersTo": "card",
+      "description": "The recognition signal. Two letters from the name's meaningful words; deliberately not colour-coded, because a hashed palette would install a second saturated voice. Patina marks entries that only resolve on this machine.",
+      "html": "<span class=\"ds-mark\">NE</span><span class=\"ds-mark ds-mark-local\">BL</span>",
+      "css": ".ds-mark { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; margin-right: 8px; border-radius: 6px; background-color: #f2f0ec; border: 1px solid #e4e0d6; color: #24211d; font-size: 0.9rem; font-weight: 700; letter-spacing: 0.02em; line-height: 1; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; } .ds-mark-local { color: #9c5e26; border-color: #9c5e26; }"
+    },
+    {
+      "name": "Window-Mode Chip",
+      "kind": "chip",
+      "refersTo": "chip-mode",
+      "description": "Reports how a destination opens — POPUP or TAB. Read-only; it never filters.",
+      "html": "<span class=\"ds-chip-mode\">POPUP</span>",
+      "css": ".ds-chip-mode { display: inline-block; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; color: #3654d1; background: #eef0fb; padding: 2px 6px; border-radius: 4px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }"
+    },
+    {
+      "name": "Category Header",
+      "kind": "nav",
+      "refersTo": "category-title",
+      "description": "Bronze-engraved section label hung off a 3px signal-blue flag. The whole header is the drag handle for reordering the section.",
+      "html": "<div class=\"ds-cat-header\"><span class=\"ds-cat-title\">GOOGLE STUFF / EMAIL</span><button class=\"ds-cat-link\">&#9998; Rename</button><button class=\"ds-cat-link ds-cat-link-delete\">&#128465; Delete</button></div>",
+      "css": ".ds-cat-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; cursor: grab; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; } .ds-cat-title { font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; color: #9c5e26; padding-left: 8px; border-left: 3px solid #3654d1; line-height: 1; } .ds-cat-link { font-size: 0.75rem; color: #3654d1; text-transform: none; letter-spacing: normal; cursor: pointer; background: none; border: none; font-family: inherit; padding: 0; } .ds-cat-link:hover { text-decoration: underline; color: #2a41a8; } .ds-cat-link-delete:hover { color: #b3261e; text-decoration: underline; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "A recessed well: paper-colored inside a white panel, inverting the surface relationship so fields read as cut into the panel.",
+      "html": "<div class=\"ds-field\"><label class=\"ds-field-label\" for=\"ds-in\">App Name</label><input class=\"ds-input\" id=\"ds-in\" type=\"text\" placeholder=\"e.g., Soda Counter\"></div>",
+      "css": ".ds-field { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; width: 260px; } .ds-field-label { display: block; font-size: 0.8rem; color: #79746a; margin-bottom: 4px; } .ds-input { width: 100%; background: #f2f0ec; border: 1px solid #e4e0d6; color: #24211d; padding: 8px; border-radius: 4px; font-size: 0.9rem; font-family: inherit; transition: border-color 0.2s, box-shadow 0.2s; } .ds-input::placeholder { color: #a39d90; } .ds-input:hover { border-color: #c7c2b4; } .ds-input:focus { outline: none; border-color: #3654d1; box-shadow: 0 0 0 3px rgba(54, 84, 209, 0.15); }"
+    },
+    {
+      "name": "Modal Panel",
+      "kind": "custom",
+      "refersTo": "panel",
+      "description": "The only genuinely elevated surface in the system. Enters by opacity alone — no scale, no slide.",
+      "html": "<div class=\"ds-modal\"><h2 class=\"ds-modal-title\">Add Application</h2><p class=\"ds-modal-body\">Actions right-aligned, secondary before primary.</p><div class=\"ds-modal-actions\"><button class=\"ds-modal-btn\">Cancel</button><button class=\"ds-modal-btn ds-modal-btn-primary\">Save App</button></div></div>",
+      "css": ".ds-modal { background: #ffffff; border: 1px solid #e4e0d6; padding: 20px; border-radius: 8px; width: 320px; box-shadow: 0 8px 24px rgba(36, 33, 29, 0.15); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; } .ds-modal-title { font-size: 1.2rem; margin: 0 0 15px; color: #24211d; font-weight: 600; } .ds-modal-body { font-size: 0.9rem; color: #79746a; margin: 0; line-height: 1.5; } .ds-modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; } .ds-modal-btn { background-color: #ffffff; border: 1px solid #e4e0d6; color: #24211d; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 0.9rem; font-family: inherit; transition: background-color 0.2s, border-color 0.2s, color 0.2s; } .ds-modal-btn:hover { background-color: #eef0fb; border-color: #3654d1; color: #3654d1; } .ds-modal-btn-primary { background-color: #3654d1; color: #ffffff; border: none; box-shadow: 0 1px 2px rgba(54, 84, 209, 0.35); } .ds-modal-btn-primary:hover { background-color: #2a41a8; color: #ffffff; }"
+    },
+    {
+      "name": "Card Grid",
+      "kind": "custom",
+      "refersTo": "card",
+      "description": "The product's navigation. Intrinsically responsive with no media queries, and deliberately ragged — a short category simply stops.",
+      "html": "<div class=\"ds-grid\"><div class=\"ds-grid-cell\">Netlify</div><div class=\"ds-grid-cell\">GitHub</div><div class=\"ds-grid-cell\">Cloudflare</div><div class=\"ds-grid-cell\">Baserow Local</div></div>",
+      "css": ".ds-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; } .ds-grid-cell { background-color: #ffffff; border: 1px solid #e4e0d6; border-radius: 8px; padding: 15px; min-height: 120px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 1rem; font-weight: bold; color: #24211d; box-shadow: 0 1px 3px rgba(36, 33, 29, 0.06); cursor: pointer; transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s; } .ds-grid-cell:hover { transform: translateY(-2px); border-color: #3654d1; box-shadow: 0 4px 10px rgba(36, 33, 29, 0.1); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Control Room",
+    "overview": "This is an instrument panel for one operator. Every surface exists to answer where do I go next in under a second, and the entire visual system is organized around making destinations legible at a glance rather than making the interface itself interesting. The room is calm: warm off-white paper, hairline rules, white panels laid out in a grid. Nothing glows, nothing pulses, nothing competes. The only saturated color in the room is Instrument Blue, and it means one thing — this responds to you.\n\nThe warmth is deliberate and load-bearing. A control room rendered in cool greys reads as somebody else's software, borrowed and generic. The paper tone (#f2f0ec) and the brass-warm ink (#24211d) make it read as a workshop that belongs to a person — a bench that has been arranged, not a dashboard that was configured. Patina carries that further: the category labels are engraved in warm bronze, the one place the system permits an ornamental color, because those labels are the operator's own filing scheme made visible.\n\nDensity is moderate and deliberately un-clever. Cards are generous enough to hit without aiming, the grid reflows on its own, and arrangement is never automated — order in this system is a record of human judgment and the interface treats it as data, not decoration. The system rejects the two obvious neighbors: it is not a start page (no wallpaper, no clock, no weather, no search box pretending to be a browser), and it is not a cool-grey SaaS admin panel (no sidebar, no avatar menu, no chrome that implies an organization). There is one user. The design owes them speed and owes a stranger nothing.",
+    "keyCharacteristics": [
+      "Warm paper ground with pure-white panels — depth by tone, not by shadow",
+      "Exactly one saturated accent, reserved for interactivity",
+      "Bronze-engraved section labels as the only ornamental color",
+      "Flat at rest; motion and shadow appear strictly as a response to the hand",
+      "Hairline rules (1px) doing the work borders usually ask shadows to do",
+      "System font stack throughout — zero webfont cost, native feel",
+      "Grid that reflows itself, order that never does"
+    ],
+    "rules": [
+      { "name": "The One Signal Rule", "body": "Instrument Blue means this responds to you. If an element is blue and cannot be clicked, dragged, focused, or dropped into, the color is wrong. The moment blue becomes ambient, it stops being a signal and the room loses its only instrument. No blue body text, no blue fills on inert elements, no blue used to decorate.", "section": "colors" },
+      { "name": "The Section Flag Exception", "body": "One structural use of Instrument Blue is sanctioned, and only one: the 3px left rule on a category label. It is a flag marking where a section of the filing scheme begins — the operator's own structure, which is the closest thing this product has to a second signal worth spending the color on. The exception is deliberately narrow and does not generalize: it applies to the category label alone, never to cards, list items, callouts, alerts, or any other heading. Anything else reaching for a colored side border is decoration and takes Patina or nothing.", "section": "colors" },
+      { "name": "The White-Backing Rule", "body": "Muted text (#79746a) clears AA only against Surface, not against Paper. Secondary text therefore lives inside white panels, always. If a design needs quiet text directly on the paper ground, darken it to Ink or give it a white panel to sit on — do not place Muted on Paper and do not invent a fourth grey.", "section": "colors" },
+      { "name": "The Warm Spine Rule", "body": "Every neutral in this system shares the paper's warm hue. There are no cool greys and no pure blacks anywhere in the room, in either theme. A #666 or a #f5f6f8 entering this palette is drift, not a shade.", "section": "colors" },
+      { "name": "The Lights-Down Rule", "body": "Dark mode raises the accent and inverts the direction of hover (lighter, not darker); it never changes the hue family, never introduces a cool grey, and never drops the warmth. If the dark theme could be mistaken for a generic dark UI, it has been built wrong.", "section": "colors" },
+      { "name": "The Scan-Target Rule", "body": "The card name is the only thing a user actually reads on this surface, so it is the boldest text in the system regardless of size. Never let a heading out-weight a card name; hierarchy here runs by function, not by document structure.", "section": "typography" },
+      { "name": "The Small-Caps Spine Rule", "body": "Uppercase plus letter-spacing is reserved for structural labels — category names and mode chips. It never appears on a button, a card name, or running text. Uppercase in this system means this is a divider in the filing scheme.", "section": "typography" },
+      { "name": "The Ragged-Bottom Rule", "body": "Categories are never padded, stretched, or balanced to make rows even. A category with three tools is three cards wide and stops. The grid's raggedness is the shape of the operator's real toolkit, and smoothing it would be a lie about the data.", "section": "layout" },
+      { "name": "The Frozen-Order Rule", "body": "Card order within a category, and category order down the page, are set by hand and are load-bearing data. Nothing in this system alphabetizes, re-sorts, auto-groups, or tidies them — not on render, not on import, not on add. New items append; they never insert.", "section": "layout" },
+      { "name": "The Reaction-Only Rule", "body": "If a shadow is not the answer to something the user just did — hovering, dragging, focusing, opening — it does not belong. Static depth to signal importance is forbidden; importance is expressed with tone, rule, and position.", "section": "elevation" },
+      { "name": "The Warm-Shadow Rule", "body": "No shadow uses pure black. Every one is tinted toward Ink or Instrument Blue.", "section": "elevation" },
+      { "name": "The Exception-Only Rule", "body": "A marker that fires on most of the set is wallpaper, not information. Any status chip in this system marks the minority case and stays silent on the default one. If a chip would appear on more than half the cards, invert it or delete it.", "section": "components" },
+      { "name": "The Hairline Rule", "body": "Borders are 1px and Rule-colored. A 2px border, a darker stroke, or a double rule is not available in this system; if something needs more presence, change its tone or its position, not its border weight.", "section": "shapes" }
+    ],
+    "dos": [
+      "Do keep Instrument Blue (#3654d1) exclusively on things that respond to input — The One Signal Rule.",
+      "Do back secondary text with a white Surface; Muted (#79746a) fails AA on Paper at 4.08:1.",
+      "Do hold every surface flat at rest and let shadow appear only as a reaction to hover, drag, focus, or open.",
+      "Do ship both themes on every new surface, keeping the dark room warm and reciprocal (Ink becomes Surface, Paper becomes Ink).",
+      "Do tint every shadow toward Ink (rgba(36, 33, 29, …)) or Instrument Blue — never pure black.",
+      "Do keep hairlines at exactly 1px in Rule (#e4e0d6); the only wider stroke in the system is the 3px category flag.",
+      "Do preserve hand-set order on render, import, and add — new items append and never insert.",
+      "Do stay on the 5px spacing base (5 / 10 / 15 / 20 / 25 / 30).",
+      "Do use the system font stack, so surfaces paint instantly and feel native in a popup window.",
+      "Do let the grid reflow intrinsically via auto-fill / minmax(160px, 1fr) rather than adding breakpoints."
+    ],
+    "donts": [
+      "Don't introduce a cool grey or a pure black. Every neutral shares the paper's warm hue — The Warm Spine Rule. The #f5f6f8/#2f6fed palette in passkey-tracker.html and the #1e1e1e/#00adb5 palette in ollama-chat.html are drift, not sanctioned variants.",
+      "Don't add a second saturated accent. One signal color is the entire premise; a green, an amber, or a purple would each cost the system its only instrument.",
+      "Don't use Instrument Blue as decoration — no blue body text or fills on inert elements. The 3px category flag is the single sanctioned structural use (The Section Flag Exception) and does not license a second one.",
+      "Don't apply static shadows to imply importance. Depth is a response, never a rank.",
+      "Don't use full-round or pill shapes. The radius scale stops at 8px.",
+      "Don't alphabetize, auto-sort, auto-group, or otherwise tidy cards or categories — The Frozen-Order Rule.",
+      "Don't pad or balance a short category to even out the grid — The Ragged-Bottom Rule.",
+      "Don't set Faint (#c7c2b4) as text; it is a 1.78:1 icon rest state and nothing else.",
+      "Don't add a webfont. The zero-request type stack is a performance commitment, not a placeholder.",
+      "Don't grow persistent navigation, a sidebar, an avatar menu, or other multi-user chrome. There is one operator.",
+      "Don't add start-page furniture — clocks, weather, wallpaper, or a search field that impersonates the browser's."
+    ]
+  }
+}

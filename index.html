@@ -15,14 +15,117 @@
                 keys.forEach(key => caches.delete(key));
             });
         }
+        // Apply the stored theme before first paint so there is no flash.
+        try {
+            const stored = localStorage.getItem('dashboardTheme');
+            if (stored === 'light' || stored === 'dark') {
+                document.documentElement.setAttribute('data-theme', stored);
+            }
+        } catch (e) { /* localStorage unavailable; fall back to system preference */ }
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MSK-Dashboard</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23f2f0ec'/%3E%3Crect x='0' y='0' width='4' height='32' rx='2' fill='%233654d1'/%3E%3Ctext x='18' y='22' font-family='Arial%2C sans-serif' font-size='14' font-weight='bold' fill='%2324211d' text-anchor='middle' letter-spacing='-0.5'%3EMSK%3C/text%3E%3C/svg%3E">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23f2f0ec'/%3E%3Crect x='6' y='6' width='8' height='8' rx='2' fill='%233654d1'/%3E%3Crect x='18' y='6' width='8' height='8' rx='2' fill='%233654d1'/%3E%3Crect x='6' y='18' width='8' height='8' rx='2' fill='%233654d1'/%3E%3Ccircle cx='22' cy='22' r='4' fill='%239c5e26'/%3E%3C/svg%3E">
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#f2f0ec">
+    <meta name="theme-color" content="#f2f0ec" id="themeColorMeta">
     <style>
+        /* ---------------------------------------------------------------
+           Design tokens. Light is the default room; dark is the same warm
+           room with the lights down (see DESIGN.md, The Lights-Down Rule).
+           The @media block comes first so an explicit [data-theme] choice
+           always wins over the system preference.
+           --------------------------------------------------------------- */
+        :root {
+            --paper: #f2f0ec;
+            --surface: #ffffff;
+            --sunken: #f2f0ec;
+            --ink: #24211d;
+            --rule: #cdc4ae;
+            --rule-soft: #e4e0d6;
+            --muted: #79746a;
+            --faint: #c7c2b4;
+            --signal: #3654d1;
+            --signal-deep: #2a41a8;
+            --signal-wash: #eef0fb;
+            --patina: #9c5e26;
+            --alert: #b3261e;
+            --alert-wash: #fbeeed;
+            --scrim: rgba(36, 33, 29, 0.45);
+            --seat: 0 1px 3px rgba(36, 33, 29, 0.06);
+            --lift: 0 4px 10px rgba(36, 33, 29, 0.1);
+            --press: 0 1px 2px rgba(54, 84, 209, 0.35);
+            --float: 0 8px 24px rgba(36, 33, 29, 0.15);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --paper: #1a1815;
+                --surface: #24211d;
+                --sunken: #1a1815;
+                --ink: #f2f0ec;
+                --rule: #4a4438;
+                --rule-soft: #3a352d;
+                --muted: #a39d90;
+                --faint: #6b6558;
+                --signal: #7b93e8;
+                --signal-deep: #9aabee;
+                --signal-wash: #262b45;
+                --patina: #c98c46;
+                --alert: #f2b8b5;
+                --alert-wash: #3a2422;
+                --scrim: rgba(0, 0, 0, 0.6);
+                --seat: 0 1px 3px rgba(0, 0, 0, 0.3);
+                --lift: 0 4px 10px rgba(0, 0, 0, 0.45);
+                --press: 0 1px 2px rgba(123, 147, 232, 0.35);
+                --float: 0 8px 24px rgba(0, 0, 0, 0.55);
+            }
+        }
+
+        :root[data-theme="light"] {
+            --paper: #f2f0ec;
+            --surface: #ffffff;
+            --sunken: #f2f0ec;
+            --ink: #24211d;
+            --rule: #cdc4ae;
+            --rule-soft: #e4e0d6;
+            --muted: #79746a;
+            --faint: #c7c2b4;
+            --signal: #3654d1;
+            --signal-deep: #2a41a8;
+            --signal-wash: #eef0fb;
+            --patina: #9c5e26;
+            --alert: #b3261e;
+            --alert-wash: #fbeeed;
+            --scrim: rgba(36, 33, 29, 0.45);
+            --seat: 0 1px 3px rgba(36, 33, 29, 0.06);
+            --lift: 0 4px 10px rgba(36, 33, 29, 0.1);
+            --press: 0 1px 2px rgba(54, 84, 209, 0.35);
+            --float: 0 8px 24px rgba(36, 33, 29, 0.15);
+        }
+
+        :root[data-theme="dark"] {
+            --paper: #1a1815;
+            --surface: #24211d;
+            --sunken: #1a1815;
+            --ink: #f2f0ec;
+            --rule: #4a4438;
+            --rule-soft: #3a352d;
+            --muted: #a39d90;
+            --faint: #6b6558;
+            --signal: #7b93e8;
+            --signal-deep: #9aabee;
+            --signal-wash: #262b45;
+            --patina: #c98c46;
+            --alert: #f2b8b5;
+            --alert-wash: #3a2422;
+            --scrim: rgba(0, 0, 0, 0.6);
+            --seat: 0 1px 3px rgba(0, 0, 0, 0.3);
+            --lift: 0 4px 10px rgba(0, 0, 0, 0.45);
+            --press: 0 1px 2px rgba(123, 147, 232, 0.35);
+            --float: 0 8px 24px rgba(0, 0, 0, 0.55);
+        }
+
         * {
             box-sizing: border-box;
             margin: 0;
@@ -30,912 +133,1569 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
 
+        /* Several controls set an explicit display, which would otherwise
+           beat the [hidden] attribute and leave them on screen. */
+        [hidden] { display: none !important; }
+
         body {
-            background-color: #f2f0ec;
-            color: #24211d;
+            background-color: var(--paper);
+            color: var(--ink);
             padding: 20px;
             line-height: 1.5;
+        }
+
+        /* One focus treatment for the whole product. Every authored control
+           gets the same ring, so keyboard position is never ambiguous. */
+        :focus-visible {
+            outline: 2px solid var(--signal);
+            outline-offset: 2px;
+            border-radius: 4px;
+        }
+
+        .skip-link {
+            position: absolute;
+            left: -9999px;
+            top: 0;
+            background: var(--surface);
+            color: var(--ink);
+            border: 1px solid var(--rule);
+            padding: 10px 15px;
+            border-radius: 6px;
+            z-index: 100;
+        }
+        .skip-link:focus {
+            left: 20px;
+            top: 20px;
+        }
+
+        .icon {
+            width: 16px;
+            height: 16px;
+            flex: none;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 1.75;
+            stroke-linecap: round;
+            stroke-linejoin: round;
         }
 
         header {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
             margin-bottom: 25px;
-            border-bottom: 1px solid #e4e0d6;
+            border-bottom: 1px solid var(--rule-soft);
             padding-bottom: 15px;
         }
 
         h1 {
             font-size: 1.4rem;
-            color: #3654d1;
+            color: var(--signal);
             font-weight: 600;
+            letter-spacing: -0.01em;
         }
 
         .header-actions {
             display: flex;
             gap: 10px;
             align-items: center;
+            flex-wrap: wrap;
         }
 
         .btn {
-            background-color: #3654d1;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background-color: var(--signal);
             color: #ffffff;
-            border: none;
+            border: 1px solid var(--signal);
             padding: 8px 14px;
             border-radius: 6px;
             cursor: pointer;
             font-weight: 500;
             font-size: 0.9rem;
-            box-shadow: 0 1px 2px rgba(54, 84, 209, 0.35);
+            min-height: 36px;
+            box-shadow: var(--press);
+            transition: background-color 0.2s, border-color 0.2s, color 0.2s;
         }
+        /* On dark, the signal colour is light, so the label on a filled
+           button flips to the dark ground rather than staying white. */
+        @media (prefers-color-scheme: dark) {
+            :root:not([data-theme="light"]) .btn:not(.btn-secondary) { color: #1a1815; }
+        }
+        :root[data-theme="dark"] .btn:not(.btn-secondary) { color: #1a1815; }
+        :root[data-theme="light"] .btn:not(.btn-secondary) { color: #ffffff; }
 
-        .btn:hover { background-color: #2a41a8; }
+        .btn:hover { background-color: var(--signal-deep); border-color: var(--signal-deep); }
 
         .btn-secondary {
-            background-color: #ffffff;
-            border: 1px solid #e4e0d6;
-            color: #24211d;
+            background-color: var(--surface);
+            border: 1px solid var(--rule);
+            color: var(--ink);
             box-shadow: none;
         }
-        .btn-secondary:hover { background-color: #eef0fb; border-color: #3654d1; color: #3654d1; }
-
-        .category-section {
-            margin-bottom: 30px;
+        .btn-secondary:hover {
+            background-color: var(--signal-wash);
+            border-color: var(--signal);
+            color: var(--signal);
         }
+
+        .btn-icon {
+            padding: 8px;
+            min-width: 36px;
+            justify-content: center;
+        }
+
+        /* Edit mode is a whole-page state, so the control that owns it
+           stays visibly latched while it is on. */
+        .btn-secondary[aria-pressed="true"] {
+            background-color: var(--signal);
+            border-color: var(--signal);
+            color: #ffffff;
+        }
+        :root[data-theme="dark"] .btn-secondary[aria-pressed="true"] { color: #1a1815; }
+        @media (prefers-color-scheme: dark) {
+            :root:not([data-theme="light"]) .btn-secondary[aria-pressed="true"] { color: #1a1815; }
+        }
+        .btn-secondary[aria-pressed="true"]:hover { background-color: var(--signal-deep); border-color: var(--signal-deep); }
+
+        .btn-danger {
+            color: var(--alert);
+            border-color: var(--rule);
+        }
+        .btn-danger:hover {
+            background-color: var(--alert-wash);
+            border-color: var(--alert);
+            color: var(--alert);
+        }
+
+        .category-section { margin-bottom: 30px; }
+
+        .category-section.dragging-category { opacity: 0.4; }
 
         .category-header {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
             margin-bottom: 12px;
-            cursor: grab;
+            min-height: 28px;
         }
-
-        /* Applied to a whole category section while you're dragging it
-           to a new position (parallels .card.dragging above). */
-        .category-section.dragging-category {
-            opacity: 0.4;
-        }
+        body.edit-mode .category-header { cursor: grab; }
 
         .category-title {
             font-size: 0.9rem;
             text-transform: uppercase;
             letter-spacing: 1px;
             font-weight: bold;
-            color: #9c5e26;
+            color: var(--patina);
             padding-left: 8px;
-            border-left: 3px solid #3654d1;
-            line-height: 1;
+            border-left: 3px solid var(--signal);
+            line-height: 1.2;
         }
 
-        .category-edit-link {
+        .category-count {
             font-size: 0.75rem;
-            color: #3654d1;
-            text-transform: none;
+            color: var(--muted);
             letter-spacing: normal;
-            cursor: pointer;
-            background: none;
-            border: none;
+            text-transform: none;
+            font-weight: 400;
         }
-        .category-edit-link:hover { text-decoration: underline; color: #2a41a8; }
 
-        /* Delete uses a different hover color (red) so it reads as a destructive action */
-        .category-edit-link.delete-cat:hover { color: #b3261e; }
+        .category-tools {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .icon-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            background: none;
+            border: 1px solid transparent;
+            border-radius: 6px;
+            color: var(--muted);
+            cursor: pointer;
+            transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+        }
+        .icon-btn:hover {
+            background-color: var(--signal-wash);
+            border-color: var(--signal);
+            color: var(--signal);
+        }
+        .icon-btn.danger:hover {
+            background-color: var(--alert-wash);
+            border-color: var(--alert);
+            color: var(--alert);
+        }
+
+        .grip {
+            color: var(--faint);
+            display: inline-flex;
+            align-items: center;
+        }
 
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
             gap: 15px;
         }
 
         .card {
-            background-color: #ffffff;
-            border: 1px solid #e4e0d6;
+            position: relative;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            background-color: var(--surface);
+            border: 1px solid var(--rule);
             border-radius: 8px;
             padding: 15px;
-            text-align: center;
-            position: relative;
+            min-height: 104px;
+            text-decoration: none;
+            color: inherit;
+            box-shadow: var(--seat);
             transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            min-height: 120px;
-            box-shadow: 0 1px 3px rgba(36, 33, 29, 0.06);
         }
 
         .card:hover {
             transform: translateY(-2px);
-            border-color: #3654d1;
-            box-shadow: 0 4px 10px rgba(36, 33, 29, 0.1);
+            border-color: var(--signal);
+            box-shadow: var(--lift);
         }
 
-        /* Applied to a card while it is being dragged, so it's obvious
-           which one you're moving. The rest of the cards shuffle live
-           around it as you drag over them. */
+        .card:focus-visible {
+            outline: 2px solid var(--signal);
+            outline-offset: 2px;
+            border-color: var(--signal);
+        }
+
         .card.dragging {
             opacity: 0.4;
             border-style: dashed;
-            border-color: #3654d1;
+            border-color: var(--signal);
+        }
+
+        /* The monogram is the recognition signal. Letterforms carry it, not
+           color — a second saturated hue would break The One Signal Rule.
+           Patina marks entries that only resolve on this machine. */
+        .card-mark {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 34px;
+            height: 34px;
+            flex: none;
+            border-radius: 6px;
+            background-color: var(--sunken);
+            border: 1px solid var(--rule-soft);
+            color: var(--ink);
+            font-size: 0.9rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            line-height: 1;
+        }
+        .card-mark.is-local {
+            color: var(--patina);
+            border-color: var(--patina);
+        }
+
+        .card-body {
+            min-width: 0;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
         }
 
         .card-title {
             font-size: 1rem;
             font-weight: bold;
-            color: #24211d;
-            margin-bottom: 5px;
+            color: var(--ink);
+            overflow-wrap: anywhere;
         }
 
-        .card-url {
+        .card-host {
             font-size: 0.75rem;
-            color: #79746a;
-            word-break: break-all;
-            margin-bottom: 10px;
+            color: var(--muted);
+            overflow-wrap: anywhere;
         }
+        .card-host.is-local { color: var(--patina); }
 
-        .card-type {
+        .card-chip {
+            align-self: flex-start;
+            margin-top: 2px;
             font-size: 0.7rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            color: #3654d1;
-            background: rgba(54, 84, 209, 0.1);
+            color: var(--signal);
+            background: var(--signal-wash);
             padding: 2px 6px;
             border-radius: 4px;
-            align-self: center;
         }
 
+        /* Bottom-right, not top-right: the title owns the top of the card and
+           must never be overlapped, while the lower corner is empty on almost
+           every card. The body reserves a row so tall cards can't collide. */
         .card-actions {
             position: absolute;
-            top: 5px;
-            right: 5px;
-            display: none;
+            bottom: 8px;
+            right: 8px;
+            display: flex;
             gap: 4px;
-            background: #ffffff;
-            border-radius: 4px;
-            padding: 2px;
+            border-radius: 6px;
         }
 
-        .card:hover .card-actions {
-            display: flex;
-        }
+        body.edit-mode .card-body { padding-bottom: 24px; }
 
-        .action-icon-btn {
-            background: none;
-            border: none;
-            color: #c7c2b4;
-            font-size: 1rem;
-            cursor: pointer;
-            padding: 2px 4px;
-            line-height: 1;
-        }
-
-        .action-icon-btn.edit-btn:hover { color: #3654d1; }
-        .action-icon-btn.delete-btn:hover { color: #b3261e; }
-
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(36, 33, 29, 0.45);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.2s;
-            z-index: 1000;
-        }
-
-        .modal-overlay.active {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .modal {
-            background: #ffffff;
-            border: 1px solid #e4e0d6;
-            padding: 20px;
+        .empty-note {
+            background: var(--surface);
+            border: 1px dashed var(--rule);
             border-radius: 8px;
-            width: 100%;
-            max-width: 320px;
-            box-shadow: 0 8px 24px rgba(36, 33, 29, 0.15);
-        }
-
-        .modal h2 {
-            font-size: 1.2rem;
-            margin-bottom: 15px;
-            color: #24211d;
-        }
-
-        .form-group {
-            margin-bottom: 12px;
-        }
-
-        .form-group label {
-            display: block;
-            font-size: 0.8rem;
-            color: #79746a;
-            margin-bottom: 4px;
-        }
-
-        .form-group input, .form-group select {
-            width: 100%;
-            background: #f2f0ec;
-            border: 1px solid #e4e0d6;
-            color: #24211d;
-            padding: 8px;
-            border-radius: 4px;
+            padding: 20px;
+            color: var(--muted);
             font-size: 0.9rem;
         }
 
-        .form-group input:focus, .form-group select:focus {
-            outline: none;
-            border-color: #3654d1;
-            box-shadow: 0 0 0 3px rgba(54, 84, 209, 0.15);
+        /* Dialogs -------------------------------------------------------- */
+        dialog {
+            background: var(--surface);
+            color: var(--ink);
+            border: 1px solid var(--rule);
+            padding: 20px;
+            border-radius: 8px;
+            width: calc(100% - 40px);
+            max-width: 380px;
+            box-shadow: var(--float);
+        }
+        dialog::backdrop { background: var(--scrim); }
+
+        dialog h2 {
+            font-size: 1.2rem;
+            margin-bottom: 6px;
+            color: var(--ink);
         }
 
-        .modal-actions {
+        .dialog-note {
+            font-size: 0.9rem;
+            color: var(--muted);
+            margin-bottom: 15px;
+        }
+        .dialog-note strong { color: var(--ink); }
+
+        .form-group { margin-bottom: 12px; }
+
+        .form-group label {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--muted);
+            margin-bottom: 4px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            background: var(--sunken);
+            border: 1px solid var(--rule);
+            color: var(--ink);
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            min-height: 36px;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--signal);
+            box-shadow: 0 0 0 3px rgba(54, 84, 209, 0.25);
+        }
+
+        .form-hint {
+            font-size: 0.75rem;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+        .form-hint[data-state="error"] { color: var(--alert); }
+
+        .dialog-actions {
             display: flex;
             justify-content: flex-end;
             gap: 10px;
             margin-top: 18px;
+            flex-wrap: wrap;
         }
 
-        #fileInput {
-            display: none;
+        #fileInput { display: none; }
+
+        .visually-hidden {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            margin: -1px;
+            padding: 0;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * { transition: none !important; }
+            .card:hover { transform: none; }
         }
     </style>
 </head>
 <body>
 
+    <a class="skip-link" href="#dashboardContainer">Skip to tools</a>
+
+    <svg width="0" height="0" aria-hidden="true" style="position:absolute">
+        <defs>
+            <symbol id="i-pencil" viewBox="0 0 24 24">
+                <path d="M4 20h4L19 9a2.5 2.5 0 0 0-3.5-3.5L4.5 16.5 4 20z"/>
+                <path d="M14.5 6.5 17.5 9.5"/>
+            </symbol>
+            <symbol id="i-trash" viewBox="0 0 24 24">
+                <path d="M4 7h16"/>
+                <path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                <path d="M18 7l-.8 12a2 2 0 0 1-2 1.9H8.8a2 2 0 0 1-2-1.9L6 7"/>
+                <path d="M10 11.5v5M14 11.5v5"/>
+            </symbol>
+            <symbol id="i-plus" viewBox="0 0 24 24">
+                <path d="M12 5v14M5 12h14"/>
+            </symbol>
+            <symbol id="i-folder-plus" viewBox="0 0 24 24">
+                <path d="M3 7a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/>
+                <path d="M12 11v6M9 14h6"/>
+            </symbol>
+            <symbol id="i-download" viewBox="0 0 24 24">
+                <path d="M12 4v11"/>
+                <path d="M8 11l4 4 4-4"/>
+                <path d="M4 19h16"/>
+            </symbol>
+            <symbol id="i-upload" viewBox="0 0 24 24">
+                <path d="M12 15V4"/>
+                <path d="M8 8l4-4 4 4"/>
+                <path d="M4 19h16"/>
+            </symbol>
+            <symbol id="i-restore" viewBox="0 0 24 24">
+                <path d="M4 5v5h5"/>
+                <path d="M4.6 14a8 8 0 1 0 1.2-6.3L4 10"/>
+            </symbol>
+            <symbol id="i-sun" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="4"/>
+                <path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6L17 7M7 17l-1.4 1.4"/>
+            </symbol>
+            <symbol id="i-moon" viewBox="0 0 24 24">
+                <path d="M20 13.5A8 8 0 0 1 10.5 4a8 8 0 1 0 9.5 9.5z"/>
+            </symbol>
+            <symbol id="i-check" viewBox="0 0 24 24">
+                <path d="M20 6L9 17l-5-5"/>
+            </symbol>
+            <symbol id="i-grip" viewBox="0 0 24 24">
+                <circle cx="9" cy="6" r="1.2" fill="currentColor" stroke="none"/>
+                <circle cx="9" cy="12" r="1.2" fill="currentColor" stroke="none"/>
+                <circle cx="9" cy="18" r="1.2" fill="currentColor" stroke="none"/>
+                <circle cx="15" cy="6" r="1.2" fill="currentColor" stroke="none"/>
+                <circle cx="15" cy="12" r="1.2" fill="currentColor" stroke="none"/>
+                <circle cx="15" cy="18" r="1.2" fill="currentColor" stroke="none"/>
+            </symbol>
+        </defs>
+    </svg>
+
     <header>
         <h1>MSK-Dashboard</h1>
         <div class="header-actions">
-            <button class="btn btn-secondary" id="exportBtn" title="Export Config">Export</button>
-            <button class="btn btn-secondary" id="importBtn" title="Import Config">Import</button>
+            <button class="btn btn-secondary btn-icon" id="themeBtn" title="Switch theme" aria-label="Switch to dark theme">
+                <svg class="icon" aria-hidden="true"><use href="#i-moon"></use></svg>
+            </button>
+            <button class="btn btn-secondary" id="restoreBtn" title="Restore the configuration replaced by the last import" hidden>
+                <svg class="icon" aria-hidden="true"><use href="#i-restore"></use></svg>
+                Restore
+            </button>
+            <button class="btn btn-secondary" id="exportBtn" title="Download a dated copy of your configuration">
+                <svg class="icon" aria-hidden="true"><use href="#i-download"></use></svg>
+                Export
+            </button>
+            <button class="btn btn-secondary" id="importBtn" title="Replace this device's configuration from a file">
+                <svg class="icon" aria-hidden="true"><use href="#i-upload"></use></svg>
+                Import
+            </button>
             <input type="file" id="fileInput" accept=".json">
-            <!-- New: lets the user create a brand new category from anywhere, not tied to a specific section -->
-            <button class="btn btn-secondary" id="addCategoryBtn" title="Add a new category">+ Add Category</button>
-            <button class="btn" id="addAppBtn">+ Add App</button>
+            <button class="btn btn-secondary" id="editModeBtn" aria-pressed="false" title="Rearrange, rename and remove">
+                <svg class="icon" aria-hidden="true"><use href="#i-pencil"></use></svg>
+                <span id="editModeLabel">Arrange</span>
+            </button>
+            <button class="btn btn-secondary" id="addCategoryBtn" title="Add a new category">
+                <svg class="icon" aria-hidden="true"><use href="#i-folder-plus"></use></svg>
+                Category
+            </button>
+            <button class="btn" id="addAppBtn">
+                <svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>
+                Add App
+            </button>
         </div>
     </header>
 
-    <main id="dashboardContainer"></main>
+    <p class="visually-hidden" id="liveRegion" role="status" aria-live="polite"></p>
 
-    <div class="modal-overlay" id="modalOverlay">
-        <div class="modal">
-            <h2 id="modalTitle">Add Application</h2>
-            <form id="appForm">
-                <input type="hidden" id="editAppId">
-                <div class="form-group">
-                    <label for="appName">App Name</label>
-                    <input type="text" id="appName" required placeholder="e.g., Soda Counter">
-                </div>
-                <div class="form-group">
-                    <label for="appUrl">URL</label>
-                    <input type="url" id="appUrl" required placeholder="https://your-app.netlify.app">
-                </div>
-                <div class="form-group">
-                    <label for="appCategory">Category</label>
-                    <!--
-                        This dropdown used to have 3 hardcoded options.
-                        Now it starts empty and gets filled in automatically by
-                        populateCategoryDropdown() so it always matches whatever
-                        categories actually exist (including new/deleted ones).
-                    -->
-                    <select id="appCategory"></select>
-                </div>
-                <div class="form-group">
-                    <label for="windowType">Window Mode</label>
-                    <select id="windowType">
-                        <option value="popup">Compact Utility Window</option>
-                        <option value="tab">Standard Browser Tab</option>
-                    </select>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
-                    <button type="submit" class="btn" id="saveFormBtn">Save App</button>
-                </div>
-            </form>
+    <main id="dashboardContainer" tabindex="-1"></main>
+
+    <dialog id="appDialog" aria-labelledby="appDialogTitle">
+        <h2 id="appDialogTitle">Add Application</h2>
+        <form id="appForm" method="dialog">
+            <input type="hidden" id="editAppId">
+            <div class="form-group">
+                <label for="appName">App Name</label>
+                <input type="text" id="appName" required placeholder="e.g., Cloudflare">
+            </div>
+            <div class="form-group">
+                <label for="appUrl">URL</label>
+                <input type="url" id="appUrl" required placeholder="https://example.com">
+                <p class="form-hint" id="appUrlHint">Local addresses work too — http://localhost:8080/…</p>
+            </div>
+            <div class="form-group">
+                <label for="appCategory">Category</label>
+                <select id="appCategory"></select>
+            </div>
+            <div class="form-group">
+                <label for="windowType">Opens in</label>
+                <select id="windowType">
+                    <option value="popup">Compact popup window</option>
+                    <option value="tab">Browser tab</option>
+                </select>
+            </div>
+            <div class="dialog-actions">
+                <button type="button" class="btn btn-secondary" data-close-dialog>Cancel</button>
+                <button type="submit" class="btn" id="saveFormBtn">Save App</button>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog id="textDialog" aria-labelledby="textDialogTitle">
+        <h2 id="textDialogTitle">Name</h2>
+        <form id="textForm" method="dialog">
+            <div class="form-group">
+                <label for="textValue" id="textDialogLabel">Name</label>
+                <input type="text" id="textValue" required>
+            </div>
+            <div class="dialog-actions">
+                <button type="button" class="btn btn-secondary" data-close-dialog>Cancel</button>
+                <button type="submit" class="btn" id="textConfirmBtn">Save</button>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog id="confirmDialog" aria-labelledby="confirmDialogTitle">
+        <h2 id="confirmDialogTitle">Are you sure?</h2>
+        <p class="dialog-note" id="confirmDialogBody"></p>
+        <div class="dialog-actions">
+            <button type="button" class="btn btn-secondary" data-close-dialog>Cancel</button>
+            <button type="button" class="btn" id="confirmDialogOk">Continue</button>
         </div>
-    </div>
+    </dialog>
 
-    <script>
-        const defaultApps = [
-            { id: "1", name: "Dew Counter", url: "https://your-counter-app.netlify.app", category: "local", type: "popup" }
-        ];
+<script>
+    /* ==============================================================
+       State
+       ============================================================== */
+    const STORAGE_APPS = 'dashboardAppsGrid';
+    const STORAGE_CATS = 'dashboardCategories';
+    const STORAGE_BACKUP = 'dashboardBackupPrev';
+    const STORAGE_THEME = 'dashboardTheme';
 
-        let apps = [];
+    const defaultApps = [
+        { id: "1", name: "Dew Counter", url: "https://your-counter-app.netlify.app", category: "local", type: "popup" }
+    ];
 
-        // While a card is being dragged, this remembers which category grid
-        // it came from. We check this in the grid's dragover/drop handlers
-        // so a card can only be reordered within its own category, never
-        // dropped into a different category's grid by accident.
-        let draggedFromCategory = null;
+    let apps = [];
 
-        // Same idea, but for dragging a whole category section to reorder
-        // categories themselves. Kept separate from draggedFromCategory so
-        // dragging a card and dragging a category header never get confused
-        // with each other.
-        let draggedCategoryKey = null;
+    // While a card is being dragged, this remembers which category grid
+    // it came from, so a card can only be reordered within its own category.
+    let draggedFromCategory = null;
 
-        // categoryLabels is now the SINGLE source of truth for which categories exist.
-        // Whatever keys exist in this object ARE the categories. Add a key = new category.
-        // Delete a key = category gone. Nothing else needs to be touched.
-        let categoryLabels = {
-            local: "Local PWAs",
-            tools: "Dev Tools / Assets",
-            external: "External / Cloud"
-        };
+    // Same idea for dragging a whole category section. Kept separate so the
+    // two drag systems never get confused with each other.
+    let draggedCategoryKey = null;
 
-        function loadCategories() {
-            const savedCats = localStorage.getItem('dashboardCategories');
-            if (savedCats) {
-                categoryLabels = JSON.parse(savedCats);
+    // Arrange mode. At rest the page is destinations only; in arrange mode
+    // every editing affordance becomes visible, keyboard-reachable, and
+    // properly sized. Dragging is deliberately confined to arrange mode so
+    // that at rest a card behaves like the ordinary link it now is.
+    let editMode = false;
+
+    // categoryLabels is the SINGLE source of truth for which categories exist.
+    // Whatever keys exist in this object ARE the categories.
+    let categoryLabels = {
+        local: "Local PWAs",
+        tools: "Dev Tools / Assets",
+        external: "External / Cloud"
+    };
+
+    // Open popup windows, keyed by app id, so a second click focuses the
+    // window that is already open instead of spawning another one.
+    const openWindows = new Map();
+
+    /* ==============================================================
+       Storage
+       ============================================================== */
+    function loadCategories() {
+        const saved = localStorage.getItem(STORAGE_CATS);
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                if (parsed && typeof parsed === 'object' && Object.keys(parsed).length) {
+                    categoryLabels = parsed;
+                }
+            } catch (e) {
+                announce('Saved categories were unreadable; using defaults.');
             }
         }
+    }
 
-        function saveCategories() {
-            localStorage.setItem('dashboardCategories', JSON.stringify(categoryLabels));
-        }
+    function saveCategories() {
+        localStorage.setItem(STORAGE_CATS, JSON.stringify(categoryLabels));
+    }
 
-        // Turns a typed category name like "Side Projects!" into a safe internal
-        // key like "side-projects" that we can use as an object property and
-        // store on each app. The label shown on screen stays exactly as typed;
-        // this slug is just the internal "id" for the category.
-        function slugifyCategoryName(name) {
-            const base = name
-                .trim()
-                .toLowerCase()
-                .replace(/[^a-z0-9]+/g, '-')
-                .replace(/(^-|-$)/g, '');
-            return base || 'category';
-        }
-
-        // Makes sure a new category's internal key doesn't collide with an
-        // existing one. If "side-projects" is taken, tries "side-projects-2", etc.
-        function getUniqueCategoryKey(baseSlug) {
-            let slug = baseSlug;
-            let counter = 2;
-            while (Object.prototype.hasOwnProperty.call(categoryLabels, slug)) {
-                slug = `${baseSlug}-${counter}`;
-                counter++;
-            }
-            return slug;
-        }
-
-        // Rebuilds the "Category" dropdown in the Add/Edit App form so it always
-        // matches the current set of categories. Called on page load and any
-        // time a category is added or deleted.
-        function populateCategoryDropdown() {
-            const select = document.getElementById('appCategory');
-            const previousValue = select.value;
-            select.innerHTML = '';
-
-            Object.keys(categoryLabels).forEach(key => {
-                const option = document.createElement('option');
-                option.value = key;
-                option.textContent = categoryLabels[key];
-                select.appendChild(option);
-            });
-
-            // Try to keep whatever was selected before, if it still exists
-            if (Object.prototype.hasOwnProperty.call(categoryLabels, previousValue)) {
-                select.value = previousValue;
-            }
-        }
-
-        function loadApps() {
-            const saved = localStorage.getItem('dashboardAppsGrid');
-            if (saved) {
+    function loadApps() {
+        const saved = localStorage.getItem(STORAGE_APPS);
+        if (saved) {
+            try {
                 apps = JSON.parse(saved);
-            } else {
+            } catch (e) {
                 apps = [...defaultApps];
-                saveApps();
             }
-            renderDashboard();
+        } else {
+            apps = [...defaultApps];
         }
+    }
 
-        function saveApps() {
-            localStorage.setItem('dashboardAppsGrid', JSON.stringify(apps));
+    function saveApps() {
+        localStorage.setItem(STORAGE_APPS, JSON.stringify(apps));
+    }
+
+    /* ==============================================================
+       Helpers
+       ============================================================== */
+    function announce(message) {
+        const region = document.getElementById('liveRegion');
+        region.textContent = '';
+        // Re-setting on the next frame guarantees the change is announced
+        // even when the same message fires twice in a row.
+        requestAnimationFrame(() => { region.textContent = message; });
+    }
+
+    function slugifyCategoryName(name) {
+        return name.toLowerCase().trim()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '') || 'category';
+    }
+
+    function getUniqueCategoryKey(name) {
+        const base = slugifyCategoryName(name);
+        let slug = base;
+        let n = 2;
+        while (Object.prototype.hasOwnProperty.call(categoryLabels, slug)) {
+            slug = `${base}-${n++}`;
         }
+        return slug;
+    }
 
-        // --- Drag-and-drop reordering helpers ---
+    function categoryNameExists(name, exceptKey) {
+        const wanted = name.trim().toLowerCase();
+        return Object.keys(categoryLabels).some(key =>
+            key !== exceptKey && categoryLabels[key].trim().toLowerCase() === wanted
+        );
+    }
 
-        // While dragging, this figures out which existing card the mouse is
-        // closest to, so we know where to slot the dragged card in. Cards
-        // sit in a CSS grid (multiple columns), so we can't just compare
-        // vertical position like a simple list - we compare distance to the
-        // center of every other card and also check whether that card is
-        // "ahead of" the cursor (further down, or same row but further right).
-        // Whatever this returns is where the dragged card gets inserted
-        // BEFORE. If it returns null, the dragged card goes at the very end.
-        function getDragAfterElement(grid, mouseX, mouseY) {
-            const otherCards = [...grid.querySelectorAll('.card:not(.dragging)')];
-
-            let closest = { distance: Infinity, element: null };
-
-            otherCards.forEach(card => {
-                const box = card.getBoundingClientRect();
-                const centerX = box.left + box.width / 2;
-                const centerY = box.top + box.height / 2;
-
-                // Is this card positioned after the cursor? Either it's in a
-                // lower row, or it's in roughly the same row but to the right.
-                const sameRow = Math.abs(centerY - mouseY) <= box.height / 2;
-                const isAfterCursor = (centerY > mouseY) || (sameRow && centerX > mouseX);
-
-                if (isAfterCursor) {
-                    const distance = Math.hypot(centerX - mouseX, centerY - mouseY);
-                    if (distance < closest.distance) {
-                        closest = { distance, element: card };
-                    }
-                }
-            });
-
-            return closest.element;
+    function parseUrl(rawUrl) {
+        try {
+            return new URL(rawUrl);
+        } catch (e) {
+            return null;
         }
+    }
 
-        // Once a card is dropped, the DOM order inside that category's grid
-        // is already the new order (we moved elements live during dragover).
-        // This reads that DOM order and rewrites the `apps` array so the
-        // saved order matches what's on screen.
-        //
-        // categoryAppIds is the list of app ids that belonged to this
-        // category at the time it was rendered. We use that (rather than
-        // re-checking each app's `category` field) so this still works
-        // correctly for apps that landed in a category via the "fallback"
-        // safety net in renderDashboard.
-        function syncCategoryOrderFromDOM(grid, categoryAppIds) {
-            const newIdOrder = [...grid.querySelectorAll('.card')].map(card => card.dataset.id);
-            const idsInThisCategory = new Set(categoryAppIds);
+    function isLocalUrl(rawUrl) {
+        const parsed = parseUrl(rawUrl);
+        const host = parsed ? parsed.hostname : rawUrl.replace(/^https?:\/\//, '').split('/')[0];
+        return /^(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\]|.*\.local)$/i.test(host);
+    }
 
-            let nextIndex = 0;
-            apps = apps.map(app => {
-                if (!idsInThisCategory.has(app.id)) {
-                    return app; // untouched, belongs to a different category
-                }
-                const idForThisSlot = newIdOrder[nextIndex];
-                nextIndex++;
-                return apps.find(a => a.id === idForThisSlot);
-            });
+    // The URL's only real job on a card is to tell near-identical entries
+    // apart, so show the host by default and add the discriminating part of
+    // the path only where names inside a category actually collide.
+    function describeUrl(app, siblings) {
+        const parsed = parseUrl(app.url);
+        const host = parsed
+            ? parsed.host
+            : app.url.replace(/^https?:\/\//, '').split('/')[0];
 
-            saveApps();
+        const collides = siblings.some(other =>
+            other.id !== app.id && hostOf(other) === host
+        );
+        if (!collides || !parsed) return host;
+
+        const detail = (parsed.search || parsed.pathname || '')
+            .replace(/^\/+/, '')
+            .replace(/^\?/, '');
+        return detail ? `${host} · ${decodeURIComponent(detail).slice(0, 22)}` : host;
+    }
+
+    function hostOf(app) {
+        const parsed = parseUrl(app.url);
+        return parsed ? parsed.host : app.url.replace(/^https?:\/\//, '').split('/')[0];
+    }
+
+    // Two letters, drawn from the name's meaningful words. Recognition comes
+    // from the letterform; colour stays out of it (The One Signal Rule).
+    function monogramFor(name) {
+        const cleaned = name.replace(/\([^)]*\)/g, ' ');
+        const words = cleaned.split(/[^A-Za-z0-9]+/).filter(Boolean);
+        const wordy = words.filter(w => /^[A-Za-z]/.test(w));
+        const strong = wordy.filter(w => w.length >= 3);
+        const pool = strong.length >= 2 ? strong : (wordy.length ? wordy : words);
+
+        if (!pool.length) return '??';
+        if (pool.length === 1) return pool[0].slice(0, 2).toUpperCase();
+        return (pool[0][0] + pool[1][0]).toUpperCase();
+    }
+
+    function todayStamp() {
+        const d = new Date();
+        const pad = n => String(n).padStart(2, '0');
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    }
+
+    function svgIcon(id) {
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('class', 'icon');
+        svg.setAttribute('aria-hidden', 'true');
+        const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+        use.setAttribute('href', `#${id}`);
+        svg.appendChild(use);
+        return svg;
+    }
+
+    function iconButton({ icon, label, className = '', onClick }) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `icon-btn ${className}`.trim();
+        btn.setAttribute('aria-label', label);
+        btn.title = label;
+        btn.appendChild(svgIcon(icon));
+        btn.addEventListener('click', onClick);
+        return btn;
+    }
+
+    /* ==============================================================
+       Dialogs
+       ============================================================== */
+    document.querySelectorAll('[data-close-dialog]').forEach(btn => {
+        btn.addEventListener('click', () => btn.closest('dialog').close());
+    });
+
+    // Clicking the backdrop dismisses. <dialog> gives us Esc, the focus trap,
+    // background inertness and focus restoration for free.
+    document.querySelectorAll('dialog').forEach(dlg => {
+        dlg.addEventListener('click', (e) => {
+            if (e.target === dlg) dlg.close();
+        });
+    });
+
+    function askConfirm({ title, body, confirmLabel = 'Continue', danger = false }) {
+        const dlg = document.getElementById('confirmDialog');
+        document.getElementById('confirmDialogTitle').textContent = title;
+        document.getElementById('confirmDialogBody').textContent = body;
+
+        const ok = document.getElementById('confirmDialogOk');
+        ok.textContent = confirmLabel;
+        ok.className = danger ? 'btn btn-secondary btn-danger' : 'btn';
+
+        return new Promise(resolve => {
+            let confirmed = false;
+            const onOk = () => { confirmed = true; dlg.close(); };
+            ok.addEventListener('click', onOk);
+            dlg.addEventListener('close', () => {
+                ok.removeEventListener('click', onOk);
+                resolve(confirmed);
+            }, { once: true });
+            dlg.showModal();
+        });
+    }
+
+    function askText({ title, label, value = '', confirmLabel = 'Save' }) {
+        const dlg = document.getElementById('textDialog');
+        document.getElementById('textDialogTitle').textContent = title;
+        document.getElementById('textDialogLabel').textContent = label;
+        document.getElementById('textConfirmBtn').textContent = confirmLabel;
+
+        const input = document.getElementById('textValue');
+        input.value = value;
+
+        const form = document.getElementById('textForm');
+
+        return new Promise(resolve => {
+            let result = null;
+            const onSubmit = () => { result = input.value.trim(); };
+            form.addEventListener('submit', onSubmit);
+            dlg.addEventListener('close', () => {
+                form.removeEventListener('submit', onSubmit);
+                resolve(result || null);
+            }, { once: true });
+            dlg.showModal();
+            input.focus();
+            input.select();
+        });
+    }
+
+    /* ==============================================================
+       Category dropdown
+       ============================================================== */
+    function populateCategoryDropdown() {
+        const select = document.getElementById('appCategory');
+        const previous = select.value;
+        select.textContent = '';
+
+        Object.keys(categoryLabels).forEach(key => {
+            const option = document.createElement('option');
+            option.value = key;
+            option.textContent = categoryLabels[key];
+            select.appendChild(option);
+        });
+
+        if (Object.prototype.hasOwnProperty.call(categoryLabels, previous)) {
+            select.value = previous;
         }
+    }
 
-        // --- Category reordering helpers (separate from the app-card ones above) ---
+    /* ==============================================================
+       Drag helpers
+       ============================================================== */
+    // 2D distance to each card's centre, because the grid is multi-column.
+    function getDragAfterElement(container, x, y) {
+        const cards = [...container.querySelectorAll('.card:not(.dragging)')];
+        let closest = { distance: Number.POSITIVE_INFINITY, element: null };
 
-        // Categories stack one per row, so unlike the app grid we only need
-        // to compare vertical position to know where a dragged category
-        // should land - no left/right column math needed.
-        function getCategoryDragAfterElement(container, mouseY) {
-            const otherSections = [...container.querySelectorAll('.category-section:not(.dragging-category)')];
+        cards.forEach(card => {
+            const box = card.getBoundingClientRect();
+            const centreX = box.left + box.width / 2;
+            const centreY = box.top + box.height / 2;
+            const distance = Math.hypot(x - centreX, y - centreY);
 
-            let closest = { offset: -Infinity, element: null };
+            if (distance < closest.distance) {
+                closest = {
+                    distance,
+                    element: (x < centreX || y < centreY - box.height / 2) ? card : card.nextSibling
+                };
+            }
+        });
 
-            otherSections.forEach(section => {
-                const box = section.getBoundingClientRect();
-                const offset = mouseY - box.top - box.height / 2;
-                // We only want sections whose center is below the cursor
-                // (offset < 0), and of those, the nearest one.
-                if (offset < 0 && offset > closest.offset) {
-                    closest = { offset, element: section };
-                }
-            });
+        return closest.element;
+    }
 
-            return closest.element;
-        }
+    // Categories are a single column, so vertical position is all that matters.
+    function getCategoryDragAfterElement(container, y) {
+        const sections = [...container.querySelectorAll('.category-section:not(.dragging-category)')];
+        return sections.find(section => {
+            const box = section.getBoundingClientRect();
+            return y < box.top + box.height / 2;
+        }) || null;
+    }
 
-        // Once a category section is dropped in its new spot, the DOM order
-        // of .category-section elements is already correct (we moved it
-        // live during dragover). This rebuilds categoryLabels with that same
-        // key order and saves it, so the new arrangement survives a reload.
-        function syncCategoryListOrderFromDOM(container) {
-            const orderedKeys = [...container.querySelectorAll('.category-section')]
-                .map(section => section.dataset.catKey);
+    function syncCategoryOrderFromDOM(catKey, grid) {
+        const idsInOrder = [...grid.querySelectorAll('.card')].map(card => card.dataset.id);
+        const others = apps.filter(app => app.category !== catKey);
+        const reordered = idsInOrder
+            .map(id => apps.find(app => app.id === id))
+            .filter(Boolean);
+        apps = [...others, ...reordered];
+        saveApps();
+    }
 
-            const reordered = {};
-            orderedKeys.forEach(key => {
+    function syncCategoryListOrderFromDOM(container) {
+        const keysInOrder = [...container.querySelectorAll('.category-section')]
+            .map(section => section.dataset.category);
+        const reordered = {};
+        keysInOrder.forEach(key => {
+            if (Object.prototype.hasOwnProperty.call(categoryLabels, key)) {
                 reordered[key] = categoryLabels[key];
-            });
-            categoryLabels = reordered;
-            saveCategories();
+            }
+        });
+        categoryLabels = reordered;
+        saveCategories();
+    }
+
+    /* ==============================================================
+       Keyboard reordering (arrange mode)
+       ============================================================== */
+    function moveApp(app, direction) {
+        const siblings = apps.filter(a => a.category === app.category);
+        const index = siblings.findIndex(a => a.id === app.id);
+        const target = index + direction;
+        if (target < 0 || target >= siblings.length) return false;
+
+        [siblings[index], siblings[target]] = [siblings[target], siblings[index]];
+        apps = [...apps.filter(a => a.category !== app.category), ...siblings];
+        saveApps();
+        renderDashboard();
+
+        const moved = document.querySelector(`.card[data-id="${app.id}"]`);
+        if (moved) moved.focus();
+        announce(`${app.name} moved to position ${target + 1} of ${siblings.length}.`);
+        return true;
+    }
+
+    function moveCategory(catKey, direction) {
+        const keys = Object.keys(categoryLabels);
+        const index = keys.indexOf(catKey);
+        const target = index + direction;
+        if (target < 0 || target >= keys.length) return false;
+
+        [keys[index], keys[target]] = [keys[target], keys[index]];
+        const reordered = {};
+        keys.forEach(key => { reordered[key] = categoryLabels[key]; });
+        categoryLabels = reordered;
+        saveCategories();
+        renderDashboard();
+
+        const handle = document.querySelector(`.category-section[data-category="${catKey}"] .cat-move`);
+        if (handle) handle.focus();
+        announce(`${categoryLabels[catKey]} moved to position ${target + 1} of ${keys.length}.`);
+        return true;
+    }
+
+    /* ==============================================================
+       Render
+       ============================================================== */
+    function renderDashboard() {
+        const container = document.getElementById('dashboardContainer');
+        container.textContent = '';
+        document.body.classList.toggle('edit-mode', editMode);
+
+        const categoryKeys = Object.keys(categoryLabels);
+
+        if (!categoryKeys.length) {
+            const note = document.createElement('p');
+            note.className = 'empty-note';
+            note.textContent = 'No categories yet. Add one to start filing tools.';
+            container.appendChild(note);
+            return;
         }
 
-        function renderDashboard() {
-            const container = document.getElementById('dashboardContainer');
-            container.innerHTML = '';
+        categoryKeys.forEach(catKey => {
+            const section = document.createElement('section');
+            section.className = 'category-section';
+            section.dataset.category = catKey;
 
-            // Categories are now built dynamically from categoryLabels instead of
-            // a fixed { local, tools, external } object. This is the key change
-            // that makes add/delete actually possible.
-            const categoryKeys = Object.keys(categoryLabels);
-            const groups = {};
-            categoryKeys.forEach(key => { groups[key] = []; });
+            const catGroup = apps.filter(app => app.category === catKey);
 
-            // If an app's category somehow doesn't exist anymore (shouldn't normally
-            // happen since delete reassigns apps, but this is a safety net), drop it
-            // into the first available category instead of losing it from view.
-            const fallbackKey = categoryKeys[0];
-            apps.forEach(app => {
-                if (groups[app.category]) {
-                    groups[app.category].push(app);
-                } else if (fallbackKey) {
-                    groups[fallbackKey].push(app);
-                }
-            });
+            /* ---- header ---- */
+            const header = document.createElement('div');
+            header.className = 'category-header';
 
-            categoryKeys.forEach(catKey => {
-                const catGroup = groups[catKey];
-                
-                const sect = document.createElement('section');
-                sect.className = 'category-section';
-                // Used by syncCategoryListOrderFromDOM to read the new
-                // category order straight off the DOM after a drop.
-                sect.dataset.catKey = catKey;
+            if (editMode) {
+                const grip = document.createElement('span');
+                grip.className = 'grip';
+                grip.appendChild(svgIcon('i-grip'));
+                header.appendChild(grip);
+            }
 
-                const catHeader = document.createElement('div');
-                catHeader.className = 'category-header';
+            const title = document.createElement('h2');
+            title.className = 'category-title';
+            title.textContent = categoryLabels[catKey];
 
-                // The header bar is the drag handle for reordering whole
-                // categories. We deliberately don't make the entire section
-                // draggable, so clicking around inside the grid (to open an
-                // app, etc.) never gets mistaken for a drag.
-                catHeader.draggable = true;
-                catHeader.addEventListener('dragstart', () => {
-                    sect.classList.add('dragging-category');
+            const count = document.createElement('span');
+            count.className = 'category-count';
+            count.textContent = ` ${catGroup.length}`;
+            title.appendChild(count);
+            header.appendChild(title);
+
+            if (editMode) {
+                const tools = document.createElement('div');
+                tools.className = 'category-tools';
+
+                const moveBtn = iconButton({
+                    icon: 'i-grip',
+                    label: `Move ${categoryLabels[catKey]} — use arrow up and down`,
+                    className: 'cat-move',
+                    onClick: () => {}
+                });
+                moveBtn.addEventListener('keydown', (e) => {
+                    if (e.key === 'ArrowUp') { e.preventDefault(); moveCategory(catKey, -1); }
+                    if (e.key === 'ArrowDown') { e.preventDefault(); moveCategory(catKey, 1); }
+                });
+                tools.appendChild(moveBtn);
+
+                tools.appendChild(iconButton({
+                    icon: 'i-pencil',
+                    label: `Rename ${categoryLabels[catKey]}`,
+                    onClick: () => renameCategory(catKey)
+                }));
+
+                tools.appendChild(iconButton({
+                    icon: 'i-trash',
+                    label: `Delete ${categoryLabels[catKey]}`,
+                    className: 'danger',
+                    onClick: () => deleteCategory(catKey)
+                }));
+
+                header.appendChild(tools);
+
+                section.draggable = true;
+                section.addEventListener('dragstart', (e) => {
+                    if (draggedFromCategory !== null) return;
                     draggedCategoryKey = catKey;
+                    section.classList.add('dragging-category');
+                    e.stopPropagation();
                 });
-                catHeader.addEventListener('dragend', () => {
-                    sect.classList.remove('dragging-category');
-                    draggedCategoryKey = null;
-                });
-
-                const title = document.createElement('div');
-                title.className = 'category-title';
-                title.textContent = categoryLabels[catKey] || catKey;
-                catHeader.appendChild(title);
-
-                // --- Rename button (unchanged from before) ---
-                const renameLink = document.createElement('button');
-                renameLink.className = 'category-edit-link';
-                renameLink.textContent = '✎ Rename';
-                renameLink.draggable = false;
-                renameLink.addEventListener('click', () => {
-                    const currentName = categoryLabels[catKey];
-                    const newName = prompt(`Enter new name for category "${currentName}":`, currentName);
-                    if (newName && newName.trim() !== "") {
-                        categoryLabels[catKey] = newName.trim();
-                        saveCategories();
+                section.addEventListener('dragend', () => {
+                    section.classList.remove('dragging-category');
+                    if (draggedCategoryKey !== null) {
+                        draggedCategoryKey = null;
+                        // A cancelled drag leaves the DOM shuffled; re-render
+                        // from state so the screen and storage never diverge.
                         renderDashboard();
                     }
                 });
-                catHeader.appendChild(renameLink);
+            }
 
-                // --- New: Delete button for this category ---
-                const deleteCatLink = document.createElement('button');
-                deleteCatLink.className = 'category-edit-link delete-cat';
-                deleteCatLink.textContent = '🗑 Delete';
-                deleteCatLink.draggable = false;
-                deleteCatLink.addEventListener('click', () => {
-                    const allKeys = Object.keys(categoryLabels);
+            section.appendChild(header);
 
-                    // Block deleting the very last category. Every app needs
-                    // somewhere to live, so we always require at least one.
-                    if (allKeys.length <= 1) {
-                        alert('At least one category must remain. Add another category before deleting this one.');
-                        return;
-                    }
+            /* ---- grid ---- */
+            const grid = document.createElement('div');
+            grid.className = 'grid';
 
-                    const appsInThisCategory = apps.filter(a => a.category === catKey);
-                    const fallbackCatKey = allKeys.find(k => k !== catKey);
-                    const fallbackCatLabel = categoryLabels[fallbackCatKey];
+            if (!catGroup.length) {
+                const note = document.createElement('p');
+                note.className = 'empty-note';
+                note.textContent = 'Nothing filed here yet.';
+                section.appendChild(note);
+            } else {
+                catGroup.forEach(app => grid.appendChild(buildCard(app, catGroup)));
+                section.appendChild(grid);
+            }
 
-                    let confirmMessage;
-                    if (appsInThisCategory.length > 0) {
-                        confirmMessage = `"${categoryLabels[catKey]}" contains ${appsInThisCategory.length} app(s). ` +
-                            `Deleting it will move ${appsInThisCategory.length > 1 ? 'them' : 'it'} into "${fallbackCatLabel}". Continue?`;
-                    } else {
-                        confirmMessage = `Delete the empty category "${categoryLabels[catKey]}"?`;
-                    }
-
-                    if (!confirm(confirmMessage)) return;
-
-                    // Move any apps out of the category being deleted, so nothing
-                    // disappears from the dashboard.
-                    if (appsInThisCategory.length > 0) {
-                        apps = apps.map(a =>
-                            a.category === catKey ? { ...a, category: fallbackCatKey } : a
-                        );
-                        saveApps();
-                    }
-
-                    // Now it's safe to remove the category itself.
-                    delete categoryLabels[catKey];
-                    saveCategories();
-
-                    populateCategoryDropdown();
-                    renderDashboard();
-                });
-                catHeader.appendChild(deleteCatLink);
-
-                sect.appendChild(catHeader);
-
-                if (catGroup.length === 0) {
-                    const emptyMsg = document.createElement('div');
-                    emptyMsg.style.cssText = 'font-size:0.8rem; color:#c7c2b4; padding-left:8px; font-style:italic;';
-                    emptyMsg.textContent = 'No applications mapped to this segment.';
-                    sect.appendChild(emptyMsg);
-                    container.appendChild(sect);
-                    return;
-                }
-
-                const grid = document.createElement('div');
-                grid.className = 'grid';
-
-                catGroup.forEach(app => {
-                    const card = document.createElement('div');
-                    card.className = 'card';
-                    const cleanUrl = app.url.replace(/^https?:\/\//, '');
-
-                    // draggable + data-id are what make this card reorderable.
-                    // data-id lets syncCategoryOrderFromDOM read the new order
-                    // straight off the DOM after a drop.
-                    card.draggable = true;
-                    card.dataset.id = app.id;
-
-                    card.innerHTML = `
-                        <div class="card-actions" draggable="false">
-                            <button class="action-icon-btn edit-btn" data-id="${app.id}" title="Edit App">✎</button>
-                            <button class="action-icon-btn delete-btn" data-id="${app.id}" title="Remove App">&times;</button>
-                        </div>
-                        <div>
-                            <div class="card-title">${app.name}</div>
-                            <div class="card-url">${cleanUrl}</div>
-                        </div>
-                        <div class="card-type">${app.type === 'popup' ? 'Utility' : 'Tab'}</div>
-                    `;
-
-                    card.addEventListener('click', (e) => {
-                        if (e.target.closest('.card-actions')) return;
-                        
-                        if (app.type === 'popup') {
-                            window.open(
-                                app.url, 
-                                `win_${app.id}`, 
-                                "width=320,height=500,noopener=yes,noreferrer=yes,resizable=yes"
-                            );
-                        } else {
-                            window.open(app.url, '_blank');
-                        }
-                    });
-
-                    // --- Drag handlers for this card ---
-                    card.addEventListener('dragstart', () => {
-                        card.classList.add('dragging');
-                        draggedFromCategory = catKey;
-                    });
-
-                    card.addEventListener('dragend', () => {
-                        card.classList.remove('dragging');
-                        draggedFromCategory = null;
-                    });
-
-                    grid.appendChild(card);
-                });
-
-                // --- Drag handlers for the grid itself (one category's worth of cards) ---
-                // dragover fires repeatedly as the mouse moves over the grid; we use
-                // it to live-shuffle the dragged card to its prospective new spot,
-                // which is the same "things slide out of the way" feel most
-                // drag-and-drop lists have.
-                grid.addEventListener('dragover', (e) => {
-                    e.preventDefault();
-                    if (draggedFromCategory !== catKey) return; // ignore drags from other categories
-
-                    const dragging = grid.querySelector('.dragging');
-                    if (!dragging) return;
-
-                    const afterElement = getDragAfterElement(grid, e.clientX, e.clientY);
-                    if (afterElement == null) {
-                        grid.appendChild(dragging);
-                    } else {
-                        grid.insertBefore(dragging, afterElement);
-                    }
-                });
-
-                grid.addEventListener('drop', (e) => {
-                    e.preventDefault();
-                    if (draggedFromCategory !== catKey) return;
-
-                    // catGroup is exactly the set of apps that were in this
-                    // category when we rendered it, which is what we need to
-                    // correctly rewrite their order in the apps array.
-                    syncCategoryOrderFromDOM(grid, catGroup.map(a => a.id));
-                });
-
-                sect.appendChild(grid);
-                container.appendChild(sect);
+            grid.addEventListener('dragover', (e) => {
+                if (draggedFromCategory !== catKey) return;
+                e.preventDefault();
+                const dragging = document.querySelector('.card.dragging');
+                if (!dragging) return;
+                const after = getDragAfterElement(grid, e.clientX, e.clientY);
+                if (after == null) grid.appendChild(dragging);
+                else grid.insertBefore(dragging, after);
             });
 
-            // Bind Delete Events
-            document.querySelectorAll('.action-icon-btn.delete-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const idToKill = btn.getAttribute('data-id');
-                    if (confirm('Remove this application link?')) {
-                        apps = apps.filter(a => a.id !== idToKill);
-                        saveApps();
-                        renderDashboard();
-                    }
-                });
+            grid.addEventListener('drop', (e) => {
+                if (draggedFromCategory !== catKey) return;
+                e.preventDefault();
+                syncCategoryOrderFromDOM(catKey, grid);
+                draggedFromCategory = null;
+                renderDashboard();
+                announce('Order saved.');
             });
 
-            // Bind Edit Events
-            document.querySelectorAll('.action-icon-btn.edit-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const idToEdit = btn.getAttribute('data-id');
-                    const targetApp = apps.find(a => a.id === idToEdit);
-                    if (targetApp) {
-                        openModalForEdit(targetApp);
-                    }
-                });
-            });
+            container.appendChild(section);
+        });
+
+        /* ---- category-level drag ---- */
+        container.addEventListener('dragover', containerDragOver);
+        container.addEventListener('drop', containerDrop);
+    }
+
+    function containerDragOver(e) {
+        if (draggedCategoryKey === null) return;
+        e.preventDefault();
+        const container = document.getElementById('dashboardContainer');
+        const dragging = document.querySelector('.category-section.dragging-category');
+        if (!dragging) return;
+        const after = getCategoryDragAfterElement(container, e.clientY);
+        if (after == null) container.appendChild(dragging);
+        else container.insertBefore(dragging, after);
+    }
+
+    function containerDrop(e) {
+        if (draggedCategoryKey === null) return;
+        e.preventDefault();
+        syncCategoryListOrderFromDOM(document.getElementById('dashboardContainer'));
+        draggedCategoryKey = null;
+        renderDashboard();
+        announce('Category order saved.');
+    }
+
+    function buildCard(app, siblings) {
+        const local = isLocalUrl(app.url);
+
+        // A real anchor: keyboard focus, status-bar preview, context menu,
+        // ⌘-click and middle-click all come back for free.
+        const card = document.createElement('a');
+        card.className = 'card';
+        card.dataset.id = app.id;
+        card.href = app.url;
+        card.target = '_blank';
+        card.rel = 'noopener noreferrer';
+
+        const mark = document.createElement('span');
+        mark.className = `card-mark${local ? ' is-local' : ''}`;
+        mark.setAttribute('aria-hidden', 'true');
+        mark.textContent = monogramFor(app.name);
+        card.appendChild(mark);
+
+        const body = document.createElement('span');
+        body.className = 'card-body';
+
+        const title = document.createElement('span');
+        title.className = 'card-title';
+        title.textContent = app.name;
+        body.appendChild(title);
+
+        const host = document.createElement('span');
+        host.className = `card-host${local ? ' is-local' : ''}`;
+        host.textContent = describeUrl(app, siblings);
+        body.appendChild(host);
+
+        // A chip that fires on 4 of 20 cards is a signal; one that fires on
+        // 16 of 20 is wallpaper. Only the exception is marked.
+        if (app.type === 'popup') {
+            const chip = document.createElement('span');
+            chip.className = 'card-chip';
+            chip.textContent = 'Popup';
+            body.appendChild(chip);
         }
 
-        // Modal Operations
-        const modal = document.getElementById('modalOverlay');
-        const appForm = document.getElementById('appForm');
+        card.appendChild(body);
 
-        document.getElementById('addAppBtn').addEventListener('click', () => {
-            document.getElementById('modalTitle').textContent = "Add Application";
-            document.getElementById('editAppId').value = "";
-            appForm.reset();
-            populateCategoryDropdown(); // make sure dropdown reflects latest categories
-            modal.classList.add('active');
+        const accessibleName = [
+            app.name,
+            local ? 'local address' : '',
+            app.type === 'popup' ? 'opens in a popup window' : 'opens in a new tab'
+        ].filter(Boolean).join(', ');
+        card.setAttribute('aria-label', accessibleName);
+
+        card.addEventListener('click', (e) => {
+            // Let the browser handle modified clicks natively.
+            if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+
+            if (editMode) { e.preventDefault(); return; }
+
+            if (app.type !== 'popup') return;
+
+            e.preventDefault();
+            const existing = openWindows.get(app.id);
+            if (existing && !existing.closed) {
+                existing.focus();
+                return;
+            }
+            // `noopener` in the feature string forces _blank and discards the
+            // window name, which is what used to spawn a duplicate window on
+            // every click. The named target is what enables reuse.
+            const win = window.open(
+                app.url,
+                `win_${app.id}`,
+                'width=320,height=500,resizable=yes'
+            );
+            if (win) {
+                openWindows.set(app.id, win);
+                win.focus();
+            }
         });
 
-        document.getElementById('cancelBtn').addEventListener('click', () => {
-            modal.classList.remove('active');
-            appForm.reset();
+        if (editMode) {
+            card.draggable = true;
+
+            card.addEventListener('dragstart', (e) => {
+                draggedFromCategory = app.category;
+                card.classList.add('dragging');
+                e.stopPropagation();
+            });
+
+            card.addEventListener('dragend', () => {
+                card.classList.remove('dragging');
+                if (draggedFromCategory !== null) {
+                    draggedFromCategory = null;
+                    renderDashboard();
+                }
+            });
+
+            card.addEventListener('keydown', (e) => {
+                if (!e.altKey) return;
+                if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    moveApp(app, -1);
+                }
+                if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    moveApp(app, 1);
+                }
+            });
+
+            const actions = document.createElement('span');
+            actions.className = 'card-actions';
+
+            actions.appendChild(iconButton({
+                icon: 'i-pencil',
+                label: `Edit ${app.name}`,
+                onClick: (e) => { e.preventDefault(); openAppDialog(app); }
+            }));
+
+            actions.appendChild(iconButton({
+                icon: 'i-trash',
+                label: `Remove ${app.name}`,
+                className: 'danger',
+                onClick: async (e) => {
+                    e.preventDefault();
+                    const ok = await askConfirm({
+                        title: `Remove ${app.name}?`,
+                        body: 'This removes the card from your dashboard. The app itself is untouched.',
+                        confirmLabel: 'Remove',
+                        danger: true
+                    });
+                    if (!ok) return;
+                    apps = apps.filter(a => a.id !== app.id);
+                    saveApps();
+                    renderDashboard();
+                    announce(`${app.name} removed.`);
+                }
+            }));
+
+            card.appendChild(actions);
+        }
+
+        return card;
+    }
+
+    /* ==============================================================
+       Category actions
+       ============================================================== */
+    async function addCategory() {
+        const name = await askText({
+            title: 'Add category',
+            label: 'Category name',
+            confirmLabel: 'Add category'
         });
+        if (!name) return;
 
-        // New: handles the "+ Add Category" button in the header
-        document.getElementById('addCategoryBtn').addEventListener('click', () => {
-            const name = prompt('Enter a name for the new category:');
-            if (!name || name.trim() === '') return;
+        if (categoryNameExists(name)) {
+            await askConfirm({
+                title: 'That name is taken',
+                body: `A category called “${name}” already exists. Pick a different name.`,
+                confirmLabel: 'OK'
+            });
+            return;
+        }
 
-            const baseSlug = slugifyCategoryName(name);
-            const uniqueKey = getUniqueCategoryKey(baseSlug);
+        categoryLabels[getUniqueCategoryKey(name)] = name;
+        saveCategories();
+        populateCategoryDropdown();
+        renderDashboard();
+        announce(`Category ${name} added.`);
+    }
 
-            categoryLabels[uniqueKey] = name.trim();
+    async function renameCategory(catKey) {
+        const current = categoryLabels[catKey];
+        const name = await askText({
+            title: 'Rename category',
+            label: 'Category name',
+            value: current,
+            confirmLabel: 'Rename'
+        });
+        if (!name || name === current) return;
+
+        if (categoryNameExists(name, catKey)) {
+            await askConfirm({
+                title: 'That name is taken',
+                body: `A category called “${name}” already exists. Pick a different name.`,
+                confirmLabel: 'OK'
+            });
+            return;
+        }
+
+        categoryLabels[catKey] = name;
+        saveCategories();
+        populateCategoryDropdown();
+        renderDashboard();
+        announce(`Category renamed to ${name}.`);
+    }
+
+    async function deleteCategory(catKey) {
+        const keys = Object.keys(categoryLabels);
+        if (keys.length <= 1) {
+            await askConfirm({
+                title: 'Keep at least one category',
+                body: 'Cards have to live somewhere. Add another category before deleting this one.',
+                confirmLabel: 'OK'
+            });
+            return;
+        }
+
+        const label = categoryLabels[catKey];
+        const affected = apps.filter(a => a.category === catKey);
+        const fallbackKey = keys.find(key => key !== catKey);
+        const fallbackLabel = categoryLabels[fallbackKey];
+
+        const body = affected.length
+            ? `${affected.length} card${affected.length === 1 ? '' : 's'} will move to the end of “${fallbackLabel}”, keeping their current order. Their position in that category is not something you can undo.`
+            : `“${label}” is empty, so nothing moves.`;
+
+        const ok = await askConfirm({
+            title: `Delete “${label}”?`,
+            body,
+            confirmLabel: 'Delete category',
+            danger: true
+        });
+        if (!ok) return;
+
+        apps.forEach(app => {
+            if (app.category === catKey) app.category = fallbackKey;
+        });
+        delete categoryLabels[catKey];
+
+        saveApps();
+        saveCategories();
+        populateCategoryDropdown();
+        renderDashboard();
+        announce(`Category ${label} deleted. ${affected.length} card${affected.length === 1 ? '' : 's'} moved to ${fallbackLabel}.`);
+    }
+
+    /* ==============================================================
+       App dialog
+       ============================================================== */
+    function openAppDialog(app) {
+        populateCategoryDropdown();
+
+        const dlg = document.getElementById('appDialog');
+        const isEdit = Boolean(app);
+
+        document.getElementById('appDialogTitle').textContent = isEdit ? 'Edit Application' : 'Add Application';
+        document.getElementById('saveFormBtn').textContent = isEdit ? 'Save changes' : 'Add app';
+        document.getElementById('editAppId').value = isEdit ? app.id : '';
+        document.getElementById('appName').value = isEdit ? app.name : '';
+        document.getElementById('appUrl').value = isEdit ? app.url : '';
+        document.getElementById('windowType').value = isEdit ? app.type : 'tab';
+
+        const categorySelect = document.getElementById('appCategory');
+        if (isEdit && Object.prototype.hasOwnProperty.call(categoryLabels, app.category)) {
+            categorySelect.value = app.category;
+        }
+
+        dlg.showModal();
+        document.getElementById('appName').focus();
+    }
+
+    document.getElementById('appForm').addEventListener('submit', () => {
+        const id = document.getElementById('editAppId').value;
+        const name = document.getElementById('appName').value.trim();
+        const url = document.getElementById('appUrl').value.trim();
+        const category = document.getElementById('appCategory').value;
+        const type = document.getElementById('windowType').value;
+
+        if (!name || !url || !category) return;
+
+        if (id) {
+            const existing = apps.find(a => a.id === id);
+            if (existing) Object.assign(existing, { name, url, category, type });
+            announce(`${name} updated.`);
+        } else {
+            // New cards append. Hand-set order is never re-sorted or inserted into.
+            apps.push({ id: Date.now().toString(), name, url, category, type });
+            announce(`${name} added to ${categoryLabels[category]}.`);
+        }
+
+        saveApps();
+        renderDashboard();
+    });
+
+    /* ==============================================================
+       Import / Export
+       ============================================================== */
+    function summarise(payloadApps, payloadCats) {
+        const catCount = payloadCats ? Object.keys(payloadCats).length : 0;
+        const appCount = Array.isArray(payloadApps) ? payloadApps.length : 0;
+        return `${appCount} app${appCount === 1 ? '' : 's'} in ${catCount} categor${catCount === 1 ? 'y' : 'ies'}`;
+    }
+
+    function refreshRestoreButton() {
+        const btn = document.getElementById('restoreBtn');
+        btn.hidden = !localStorage.getItem(STORAGE_BACKUP);
+    }
+
+    document.getElementById('exportBtn').addEventListener('click', () => {
+        const payload = { apps, categoryLabels };
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `msk-dashboard-${todayStamp()}.json`;
+        link.click();
+        URL.revokeObjectURL(url);
+
+        announce(`Exported ${summarise(apps, categoryLabels)}.`);
+    });
+
+    document.getElementById('importBtn').addEventListener('click', () => {
+        document.getElementById('fileInput').click();
+    });
+
+    document.getElementById('fileInput').addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+
+        reader.onload = async (e) => {
+            let incoming;
+            try {
+                incoming = JSON.parse(e.target.result);
+            } catch (err) {
+                await askConfirm({
+                    title: 'That file could not be read',
+                    body: `${file.name} is not valid JSON, so nothing was changed. Export a fresh copy from the other device and try again.`,
+                    confirmLabel: 'OK'
+                });
+                event.target.value = '';
+                return;
+            }
+
+            let nextApps = null;
+            let nextCats = null;
+
+            if (Array.isArray(incoming)) {
+                // Legacy format: a plain apps array, no categories.
+                nextApps = incoming;
+                nextCats = { ...categoryLabels };
+            } else if (incoming && Array.isArray(incoming.apps) && incoming.categoryLabels) {
+                nextApps = incoming.apps;
+                nextCats = incoming.categoryLabels;
+            }
+
+            if (!nextApps) {
+                await askConfirm({
+                    title: 'That file is not a dashboard export',
+                    body: `${file.name} parsed as JSON but has no apps list, so nothing was changed. Use a file created by Export.`,
+                    confirmLabel: 'OK'
+                });
+                event.target.value = '';
+                return;
+            }
+
+            const ok = await askConfirm({
+                title: 'Replace everything on this device?',
+                body: `${file.name} contains ${summarise(nextApps, nextCats)}. This device currently has ${summarise(apps, categoryLabels)}. Importing replaces all of it, including the order you arranged by hand. You can undo this with Restore.`,
+                confirmLabel: 'Replace',
+                danger: true
+            });
+
+            if (!ok) { event.target.value = ''; return; }
+
+            localStorage.setItem(STORAGE_BACKUP, JSON.stringify({ apps, categoryLabels }));
+
+            apps = nextApps;
+            categoryLabels = nextCats;
+            saveApps();
             saveCategories();
             populateCategoryDropdown();
             renderDashboard();
-        });
+            refreshRestoreButton();
+            announce(`Imported ${summarise(apps, categoryLabels)}.`);
+            event.target.value = '';
+        };
 
-        function openModalForEdit(app) {
-            document.getElementById('modalTitle').textContent = "Edit Application";
-            document.getElementById('editAppId').value = app.id;
-            document.getElementById('appName').value = app.name;
-            document.getElementById('appUrl').value = app.url;
-            populateCategoryDropdown(); // refresh options before setting the value below
-            document.getElementById('appCategory').value = app.category;
-            document.getElementById('windowType').value = app.type;
-            modal.classList.add('active');
+        reader.readAsText(file);
+    });
+
+    document.getElementById('restoreBtn').addEventListener('click', async () => {
+        const raw = localStorage.getItem(STORAGE_BACKUP);
+        if (!raw) return;
+
+        let backup;
+        try {
+            backup = JSON.parse(raw);
+        } catch (err) {
+            localStorage.removeItem(STORAGE_BACKUP);
+            refreshRestoreButton();
+            return;
         }
 
-        appForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const appId = document.getElementById('editAppId').value;
-            
-            const appData = {
-                name: document.getElementById('appName').value,
-                url: document.getElementById('appUrl').value,
-                category: document.getElementById('appCategory').value,
-                type: document.getElementById('windowType').value
-            };
-
-            if (appId) {
-                // Update Existing
-                apps = apps.map(a => a.id === appId ? { ...a, ...appData } : a);
-            } else {
-                // Insert New
-                apps.push({
-                    id: Date.now().toString(),
-                    ...appData
-                });
-            }
-
-            saveApps();
-            renderDashboard();
-            modal.classList.remove('active');
-            appForm.reset();
+        const ok = await askConfirm({
+            title: 'Restore the previous configuration?',
+            body: `This puts back the ${summarise(backup.apps, backup.categoryLabels)} you had before the last import, replacing the current ${summarise(apps, categoryLabels)}.`,
+            confirmLabel: 'Restore',
+            danger: true
         });
+        if (!ok) return;
 
-        // Backup Actions
-        document.getElementById('exportBtn').addEventListener('click', () => {
-            const exportPayload = { apps, categoryLabels };
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportPayload, null, 2));
-            const downloadAnchor = document.createElement('a');
-            downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", "control_center_config.json");
-            document.body.appendChild(downloadAnchor);
-            downloadAnchor.click();
-            downloadAnchor.remove();
-        });
-
-        const fileInput = document.getElementById('fileInput');
-        document.getElementById('importBtn').addEventListener('click', () => fileInput.click());
-        fileInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-                try {
-                    const importedData = JSON.parse(evt.target.result);
-                    if (Array.isArray(importedData)) {
-                        if (confirm('Overwrite config grid with standard asset array?')) {
-                            apps = importedData;
-                            saveApps();
-                            renderDashboard();
-                        }
-                    } else if (importedData.apps && importedData.categoryLabels) {
-                        if (confirm('Overwrite launchpad apps and layout categories completely?')) {
-                            apps = importedData.apps;
-                            categoryLabels = importedData.categoryLabels;
-                            saveApps();
-                            saveCategories();
-                            populateCategoryDropdown();
-                            renderDashboard();
-                        }
-                    } else {
-                        alert('Invalid configuration format detected.');
-                    }
-                } catch (err) {
-                    alert('Error parsing uploaded layout content.');
-                }
-                fileInput.value = '';
-            };
-            reader.readAsText(file);
-        });
-
-        // --- Category drag listeners (registered once, not per render) ---
-        // These live on the outer dashboard container, since category
-        // sections are its direct children. We check draggedCategoryKey so
-        // these only act during a category drag, never during an app-card
-        // drag (which is handled separately by each grid's own listeners).
-        const dashboardContainer = document.getElementById('dashboardContainer');
-
-        dashboardContainer.addEventListener('dragover', (e) => {
-            if (!draggedCategoryKey) return;
-            e.preventDefault();
-
-            const draggingSection = dashboardContainer.querySelector('.dragging-category');
-            if (!draggingSection) return;
-
-            const afterElement = getCategoryDragAfterElement(dashboardContainer, e.clientY);
-            if (afterElement == null) {
-                dashboardContainer.appendChild(draggingSection);
-            } else {
-                dashboardContainer.insertBefore(draggingSection, afterElement);
-            }
-        });
-
-        dashboardContainer.addEventListener('drop', (e) => {
-            if (!draggedCategoryKey) return;
-            e.preventDefault();
-            syncCategoryListOrderFromDOM(dashboardContainer);
-        });
-
-        loadCategories();
+        apps = backup.apps;
+        categoryLabels = backup.categoryLabels;
+        saveApps();
+        saveCategories();
+        localStorage.removeItem(STORAGE_BACKUP);
         populateCategoryDropdown();
-        loadApps();
-    </script>
+        renderDashboard();
+        refreshRestoreButton();
+        announce('Previous configuration restored.');
+    });
+
+    /* ==============================================================
+       Theme
+       ============================================================== */
+    function currentTheme() {
+        const explicit = document.documentElement.getAttribute('data-theme');
+        if (explicit) return explicit;
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+
+    function refreshThemeButton() {
+        const dark = currentTheme() === 'dark';
+        const btn = document.getElementById('themeBtn');
+        btn.setAttribute('aria-label', dark ? 'Switch to light theme' : 'Switch to dark theme');
+        btn.title = btn.getAttribute('aria-label');
+        btn.querySelector('use').setAttribute('href', dark ? '#i-sun' : '#i-moon');
+        document.getElementById('themeColorMeta').setAttribute('content', dark ? '#1a1815' : '#f2f0ec');
+    }
+
+    document.getElementById('themeBtn').addEventListener('click', () => {
+        const next = currentTheme() === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', next);
+        localStorage.setItem(STORAGE_THEME, next);
+        refreshThemeButton();
+        announce(`${next === 'dark' ? 'Dark' : 'Light'} theme on.`);
+    });
+
+    window.matchMedia('(prefers-color-scheme: dark)')
+        .addEventListener('change', refreshThemeButton);
+
+    /* ==============================================================
+       Arrange mode
+       ============================================================== */
+    document.getElementById('editModeBtn').addEventListener('click', () => {
+        editMode = !editMode;
+        const btn = document.getElementById('editModeBtn');
+        btn.setAttribute('aria-pressed', String(editMode));
+        btn.querySelector('use').setAttribute('href', editMode ? '#i-check' : '#i-pencil');
+        document.getElementById('editModeLabel').textContent = editMode ? 'Done' : 'Arrange';
+        renderDashboard();
+        announce(editMode
+            ? 'Arrange mode on. Drag to reorder, or hold Alt and press an arrow key.'
+            : 'Arrange mode off.');
+    });
+
+    /* ==============================================================
+       Boot
+       ============================================================== */
+    document.getElementById('addAppBtn').addEventListener('click', () => openAppDialog(null));
+    document.getElementById('addCategoryBtn').addEventListener('click', addCategory);
+
+    loadCategories();
+    loadApps();
+    populateCategoryDropdown();
+    renderDashboard();
+    refreshRestoreButton();
+    refreshThemeButton();
+</script>
 </body>
 </html>

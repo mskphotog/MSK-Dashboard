@@ -1,3 +1,10 @@
 .DS_Store
 .netlify
 *.log
+
+# Vendored tooling — not part of the product
+.claude/
+
+# Machine-local Impeccable state (shared config.json IS tracked)
+.impeccable/config.local.json
+.impeccable/hook.cache.json

@@ -1,7 +1,7 @@
 {
-  "name": "App Control Center",
-  "short_name": "Control Center",
-  "description": "A centralized management dashboard for local and external PWAs.",
+  "name": "MSK-Dashboard",
+  "short_name": "MSK-Dashboard",
+  "description": "A personal control room for launching local and external tools.",
   "start_url": "index.html",
   "display": "standalone",
   "background_color": "#f2f0ec",
