@@ -3,191 +3,443 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Passkey & Password Tracker</title>
+<title>Passkey &amp; Password Tracker</title>
+<script>
+    // Same key as the dashboard, so one theme choice carries across every
+    // page in the product. Applied before paint to avoid a flash.
+    try {
+        const stored = localStorage.getItem('dashboardTheme');
+        if (stored === 'light' || stored === 'dark') {
+            document.documentElement.setAttribute('data-theme', stored);
+        }
+    } catch (e) { /* localStorage unavailable; fall back to system preference */ }
+</script>
 <style>
+  /* Tokens are duplicated per page by design: this project ships every
+     page as a self-contained file with no build step and no shared
+     stylesheet. See DESIGN.md for the canonical values. */
   :root {
-    --bg: #f5f6f8;
+    --paper: #f2f0ec;
     --surface: #ffffff;
-    --border: #dde1e6;
-    --text: #1b1f24;
-    --muted: #6b7280;
-    --accent: #2f6fed;
-    --accent-soft: #e8f0fe;
-    --good: #1a7f37;
-    --warn: #b45309;
-    --danger: #c92a2a;
-    --danger-soft: #fdecec;
+    --sunken: #f2f0ec;
+    --ink: #24211d;
+    --rule: #cdc4ae;
+    --rule-soft: #e4e0d6;
+    --muted: #79746a;
+    --signal: #3654d1;
+    --signal-deep: #2a41a8;
+    --signal-wash: #eef0fb;
+    --patina: #9c5e26;
+    --alert: #b3261e;
+    --alert-wash: #fbeeed;
+    --on-signal: #ffffff;
+    --scrim: rgba(36, 33, 29, 0.45);
+    --seat: 0 1px 3px rgba(36, 33, 29, 0.06);
+    --press: 0 1px 2px rgba(54, 84, 209, 0.35);
+    --float: 0 8px 24px rgba(36, 33, 29, 0.15);
   }
+
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #14161a;
-      --surface: #1d2026;
-      --border: #2e323a;
-      --text: #e7e9ea;
-      --muted: #9aa1ab;
-      --accent: #6ea0ff;
-      --accent-soft: #22314f;
-      --good: #3fb950;
-      --warn: #e3a008;
-      --danger: #f2707a;
-      --danger-soft: #3a2222;
+      --paper: #1a1815;
+      --surface: #24211d;
+      --sunken: #1a1815;
+      --ink: #f2f0ec;
+      --rule: #4a4438;
+      --rule-soft: #3a352d;
+      --muted: #a39d90;
+      --signal: #7b93e8;
+      --signal-deep: #9aabee;
+      --signal-wash: #262b45;
+      --patina: #c98c46;
+      --alert: #f2b8b5;
+      --alert-wash: #3a2422;
+      --on-signal: #1a1815;
+      --scrim: rgba(0, 0, 0, 0.6);
+      --seat: 0 1px 3px rgba(0, 0, 0, 0.3);
+      --press: 0 1px 2px rgba(123, 147, 232, 0.35);
+      --float: 0 8px 24px rgba(0, 0, 0, 0.55);
     }
   }
+
+  :root[data-theme="light"] {
+    --paper: #f2f0ec;
+    --surface: #ffffff;
+    --sunken: #f2f0ec;
+    --ink: #24211d;
+    --rule: #cdc4ae;
+    --rule-soft: #e4e0d6;
+    --muted: #79746a;
+    --signal: #3654d1;
+    --signal-deep: #2a41a8;
+    --signal-wash: #eef0fb;
+    --patina: #9c5e26;
+    --alert: #b3261e;
+    --alert-wash: #fbeeed;
+    --on-signal: #ffffff;
+    --scrim: rgba(36, 33, 29, 0.45);
+    --seat: 0 1px 3px rgba(36, 33, 29, 0.06);
+    --press: 0 1px 2px rgba(54, 84, 209, 0.35);
+    --float: 0 8px 24px rgba(36, 33, 29, 0.15);
+  }
+
+  :root[data-theme="dark"] {
+    --paper: #1a1815;
+    --surface: #24211d;
+    --sunken: #1a1815;
+    --ink: #f2f0ec;
+    --rule: #4a4438;
+    --rule-soft: #3a352d;
+    --muted: #a39d90;
+    --signal: #7b93e8;
+    --signal-deep: #9aabee;
+    --signal-wash: #262b45;
+    --patina: #c98c46;
+    --alert: #f2b8b5;
+    --alert-wash: #3a2422;
+    --on-signal: #1a1815;
+    --scrim: rgba(0, 0, 0, 0.6);
+    --seat: 0 1px 3px rgba(0, 0, 0, 0.3);
+    --press: 0 1px 2px rgba(123, 147, 232, 0.35);
+    --float: 0 8px 24px rgba(0, 0, 0, 0.55);
+  }
+
   * { box-sizing: border-box; }
+
+  :focus-visible {
+    outline: 2px solid var(--signal);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
   body {
     margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    padding: 2rem 1rem 4rem;
+    background: var(--paper);
+    color: var(--ink);
+    padding: 20px 20px 60px;
+    line-height: 1.5;
   }
-  .wrap { max-width: 960px; margin: 0 auto; }
-  h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
-  .subtitle { color: var(--muted); margin-top: 0; margin-bottom: 1.5rem; font-size: 0.95rem; }
 
+  .wrap { max-width: 960px; margin: 0 auto; }
+
+  .page-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 15px;
+  }
+
+  h1 {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: var(--signal);
+    margin: 0 0 5px;
+    letter-spacing: -0.01em;
+  }
+
+  .subtitle {
+    color: var(--muted);
+    margin: 0 0 25px;
+    font-size: 0.9rem;
+    max-width: 70ch;
+  }
+
+  .icon {
+    width: 16px;
+    height: 16px;
+    flex: none;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 1.75;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    flex: none;
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    color: var(--muted);
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+  }
+  .icon-btn:hover {
+    background-color: var(--signal-wash);
+    border-color: var(--signal);
+    color: var(--signal);
+  }
+
+  /* Counts, not hero metrics: the number leads because it is the answer,
+     but the tile stays a flat panel on a hairline like every other surface. */
   .stats {
     display: flex;
-    gap: 0.75rem;
+    gap: 10px;
     flex-wrap: wrap;
-    margin-bottom: 1.5rem;
+    margin-bottom: 25px;
   }
   .stat {
     background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 0.75rem 1rem;
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 12px 15px;
     flex: 1;
     min-width: 140px;
+    box-shadow: var(--seat);
   }
-  .stat .num { font-size: 1.4rem; font-weight: 600; }
-  .stat .label { font-size: 0.8rem; color: var(--muted); }
+  .stat .num { font-size: 1.4rem; font-weight: 600; line-height: 1.2; }
+  .stat .label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--patina);
+    font-weight: bold;
+  }
 
   .toolbar {
     display: flex;
-    gap: 0.5rem;
+    gap: 10px;
     flex-wrap: wrap;
-    margin-bottom: 1rem;
+    margin-bottom: 15px;
     align-items: center;
   }
   .toolbar input[type="search"] {
     flex: 1;
     min-width: 180px;
-    padding: 0.55rem 0.75rem;
-    border-radius: 8px;
-    border: 1px solid var(--border);
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid var(--rule);
     background: var(--surface);
-    color: var(--text);
-    font-size: 0.95rem;
+    color: var(--ink);
+    font-size: 0.9rem;
+    font-family: inherit;
+    min-height: 36px;
   }
-  button {
+  .toolbar input[type="search"]::placeholder { color: var(--muted); }
+  .toolbar input[type="search"]:focus {
+    outline: none;
+    border-color: var(--signal);
+    box-shadow: 0 0 0 3px rgba(54, 84, 209, 0.25);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     font-family: inherit;
     font-size: 0.9rem;
-    border-radius: 8px;
-    border: 1px solid var(--border);
+    font-weight: 500;
+    border-radius: 6px;
+    border: 1px solid var(--rule);
     background: var(--surface);
-    color: var(--text);
-    padding: 0.55rem 0.9rem;
+    color: var(--ink);
+    padding: 8px 14px;
+    min-height: 36px;
     cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s;
   }
-  button:hover { border-color: var(--accent); }
-  button.primary {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: white;
+  .btn:hover {
+    background: var(--signal-wash);
+    border-color: var(--signal);
+    color: var(--signal);
   }
-  button.primary:hover { opacity: 0.92; }
+  .btn.primary {
+    background: var(--signal);
+    border-color: var(--signal);
+    color: var(--on-signal);
+    box-shadow: var(--press);
+  }
+  .btn.primary:hover {
+    background: var(--signal-deep);
+    border-color: var(--signal-deep);
+    color: var(--on-signal);
+  }
+
   input[type="file"] { display: none; }
+
+  /* Wide content scrolls inside its own container so the page body never
+     scrolls horizontally. */
+  .table-scroll {
+    overflow-x: auto;
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    background: var(--surface);
+    box-shadow: var(--seat);
+  }
 
   table {
     width: 100%;
+    min-width: 820px;
     border-collapse: collapse;
     background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    overflow: hidden;
   }
   thead th {
     text-align: left;
-    font-size: 0.78rem;
+    font-size: 0.7rem;
     text-transform: uppercase;
-    letter-spacing: 0.03em;
-    color: var(--muted);
-    padding: 0.6rem 0.75rem;
-    border-bottom: 1px solid var(--border);
+    letter-spacing: 0.5px;
+    font-weight: bold;
+    color: var(--patina);
+    padding: 10px;
+    border-bottom: 1px solid var(--rule);
+    white-space: nowrap;
   }
   tbody td {
-    padding: 0.5rem 0.75rem;
-    border-bottom: 1px solid var(--border);
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--rule-soft);
     vertical-align: middle;
   }
   tbody tr:last-child td { border-bottom: none; }
-  tbody tr:hover { background: color-mix(in srgb, var(--accent-soft) 60%, transparent); }
+  tbody tr:hover { background: var(--signal-wash); }
 
   td input[type="text"], td textarea {
     width: 100%;
     border: 1px solid transparent;
     background: transparent;
-    color: var(--text);
+    color: var(--ink);
     font-family: inherit;
     font-size: 0.9rem;
-    padding: 0.3rem 0.4rem;
-    border-radius: 6px;
+    padding: 6px;
+    border-radius: 4px;
   }
-  td input[type="text"]:hover, td textarea:hover { border-color: var(--border); }
+  td input[type="text"]::placeholder, td textarea::placeholder { color: var(--muted); }
+  td input[type="text"]:hover, td textarea:hover { border-color: var(--rule); }
   td input[type="text"]:focus, td textarea:focus {
     outline: none;
-    border-color: var(--accent);
-    background: var(--surface);
+    border-color: var(--signal);
+    background: var(--sunken);
+    box-shadow: 0 0 0 3px rgba(54, 84, 209, 0.25);
   }
   td textarea { resize: vertical; min-height: 2em; }
 
   .checkbox-cell { text-align: center; }
-  .checkbox-cell input { width: 18px; height: 18px; cursor: pointer; }
-
-  .badge {
-    display: inline-block;
-    font-size: 0.72rem;
-    font-weight: 600;
-    padding: 0.15rem 0.5rem;
-    border-radius: 999px;
-    margin-left: 0.4rem;
+  .checkbox-cell input {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--signal);
   }
-  .badge.good { background: color-mix(in srgb, var(--good) 18%, transparent); color: var(--good); }
-  .badge.warn { background: color-mix(in srgb, var(--warn) 18%, transparent); color: var(--warn); }
 
   .row-actions { text-align: right; white-space: nowrap; }
-  .row-actions button {
-    padding: 0.3rem 0.5rem;
-    font-size: 0.8rem;
-    color: var(--danger);
-    border-color: transparent;
+  .row-actions .icon-btn:hover {
+    background: var(--alert-wash);
+    border-color: var(--alert);
+    color: var(--alert);
   }
-  .row-actions button:hover { background: var(--danger-soft); border-color: var(--danger); }
+
+  /* Destructive confirmations never wear the signal colour — blue means
+     "this responds to you", not "this is safe". Matches index.html. */
+  .btn.danger {
+    color: var(--alert);
+    border-color: var(--rule);
+    background: var(--surface);
+    box-shadow: none;
+  }
+  .btn.danger:hover {
+    background: var(--alert-wash);
+    border-color: var(--alert);
+    color: var(--alert);
+  }
 
   .empty-state {
+    background: var(--surface);
+    border: 1px dashed var(--rule);
+    border-radius: 8px;
     text-align: center;
-    padding: 3rem 1rem;
+    padding: 30px 20px;
     color: var(--muted);
+    font-size: 0.9rem;
   }
 
   .footer-actions {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: 1rem;
+    margin-top: 15px;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: 10px;
   }
-  .file-controls { display: flex; gap: 0.5rem; }
-  .save-indicator {
-    font-size: 0.8rem;
-    color: var(--muted);
+  .file-controls { display: flex; gap: 10px; flex-wrap: wrap; }
+  .save-indicator { font-size: 0.75rem; color: var(--muted); }
+
+  dialog {
+    background: var(--surface);
+    color: var(--ink);
+    border: 1px solid var(--rule);
+    padding: 20px;
+    border-radius: 8px;
+    width: calc(100% - 40px);
+    max-width: 380px;
+    box-shadow: var(--float);
+  }
+  dialog::backdrop { background: var(--scrim); }
+  dialog h2 { font-size: 1.2rem; margin: 0 0 6px; }
+  .dialog-note { font-size: 0.9rem; color: var(--muted); margin: 0 0 15px; }
+  .dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 18px;
+    flex-wrap: wrap;
+  }
+
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
   }
 </style>
 </head>
 <body>
+
+<svg width="0" height="0" aria-hidden="true" style="position:absolute">
+  <defs>
+    <symbol id="i-trash" viewBox="0 0 24 24">
+      <path d="M4 7h16"/>
+      <path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+      <path d="M18 7l-.8 12a2 2 0 0 1-2 1.9H8.8a2 2 0 0 1-2-1.9L6 7"/>
+      <path d="M10 11.5v5M14 11.5v5"/>
+    </symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24">
+      <path d="M12 4v11"/><path d="M8 11l4 4 4-4"/><path d="M4 19h16"/>
+    </symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24">
+      <path d="M12 15V4"/><path d="M8 8l4-4 4 4"/><path d="M4 19h16"/>
+    </symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="4"/>
+      <path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6L17 7M7 17l-1.4 1.4"/>
+    </symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24">
+      <path d="M20 13.5A8 8 0 0 1 10.5 4a8 8 0 1 0 9.5 9.5z"/>
+    </symbol>
+  </defs>
+</svg>
+
 <div class="wrap">
-  <h1>Passkey & Password Tracker</h1>
+  <div class="page-head">
+    <div>
+      <h1>Passkey &amp; Password Tracker</h1>
+    </div>
+    <button class="icon-btn" id="themeBtn" type="button" aria-label="Switch to dark theme">
+      <svg class="icon" aria-hidden="true"><use href="#i-moon"></use></svg>
+    </button>
+  </div>
   <p class="subtitle">Track which accounts have a passkey set up and a strong (30+ character) password. Everything stays on this device — nothing is sent anywhere.</p>
 
   <div class="stats">
@@ -198,35 +450,55 @@
   </div>
 
   <div class="toolbar">
+    <label class="visually-hidden" for="searchBox">Search accounts</label>
     <input type="search" id="searchBox" placeholder="Search accounts or usernames…">
-    <button class="primary" id="addRowBtn">+ Add account</button>
+    <button class="btn primary" id="addRowBtn">
+      <svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>
+      Add account
+    </button>
   </div>
 
-  <table id="accountTable">
-    <thead>
-      <tr>
-        <th style="width:18%">Account / Site</th>
-        <th style="width:16%">URL</th>
-        <th style="width:15%">Username / Login</th>
-        <th style="width:12%">Site uses passkey?</th>
-        <th style="width:13%">30+ char password</th>
-        <th style="width:20%">Notes</th>
-        <th style="width:6%"></th>
-      </tr>
-    </thead>
-    <tbody id="tableBody"></tbody>
-  </table>
+  <div class="table-scroll">
+    <table id="accountTable">
+      <thead>
+        <tr>
+          <th style="width:18%">Account / Site</th>
+          <th style="width:16%">URL</th>
+          <th style="width:15%">Username / Login</th>
+          <th style="width:12%">Site uses passkey?</th>
+          <th style="width:13%">30+ char password</th>
+          <th style="width:20%">Notes</th>
+          <th style="width:6%"><span class="visually-hidden">Actions</span></th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
   <div class="empty-state" id="emptyState" style="display:none">No accounts yet. Click "Add account" to start tracking.</div>
 
   <div class="footer-actions">
     <span class="save-indicator" id="saveIndicator">Saved locally in this browser</span>
     <div class="file-controls">
-      <button id="exportBtn">Export backup (JSON)</button>
-      <button id="importBtn">Import backup</button>
+      <button class="btn" id="exportBtn">
+        <svg class="icon" aria-hidden="true"><use href="#i-download"></use></svg>
+        Export backup (JSON)
+      </button>
+      <button class="btn" id="importBtn">
+        <svg class="icon" aria-hidden="true"><use href="#i-upload"></use></svg>
+        Import backup
+      </button>
       <input type="file" id="importFile" accept="application/json">
     </div>
   </div>
 </div>
+
+<p class="visually-hidden" id="liveRegion" role="status" aria-live="polite"></p>
+
+<dialog id="confirmDialog" aria-labelledby="confirmTitle">
+  <h2 id="confirmTitle">Are you sure?</h2>
+  <p class="dialog-note" id="confirmBody"></p>
+  <div class="dialog-actions" id="confirmActions"></div>
+</dialog>
 
 <script>
 (function () {
@@ -234,7 +506,77 @@
   const tableBody = document.getElementById('tableBody');
   const emptyState = document.getElementById('emptyState');
   const searchBox = document.getElementById('searchBox');
+  const liveRegion = document.getElementById('liveRegion');
 
+  function announce(message) {
+    liveRegion.textContent = '';
+    requestAnimationFrame(() => { liveRegion.textContent = message; });
+  }
+
+  /* ---- dialogs ----
+     Replaces confirm()/alert(). Native <dialog> brings the focus trap, Esc,
+     backdrop dismissal and an inert background with it. `choices` lets the
+     import flow offer Merge and Replace as real buttons instead of
+     overloading OK/Cancel. */
+  function ask({ title, body, choices }) {
+    const dlg = document.getElementById('confirmDialog');
+    document.getElementById('confirmTitle').textContent = title;
+    document.getElementById('confirmBody').textContent = body;
+
+    const actions = document.getElementById('confirmActions');
+    actions.textContent = '';
+
+    return new Promise(resolve => {
+      let result = null;
+
+      choices.forEach(choice => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = choice.danger ? 'btn danger' : (choice.primary ? 'btn primary' : 'btn');
+        btn.textContent = choice.label;
+        btn.addEventListener('click', () => { result = choice.value; dlg.close(); });
+        actions.appendChild(btn);
+      });
+
+      dlg.addEventListener('close', () => resolve(result), { once: true });
+      dlg.showModal();
+      const first = actions.querySelector('button');
+      if (first) first.focus();
+    });
+  }
+
+  document.getElementById('confirmDialog').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) e.currentTarget.close();
+  });
+
+  /* ---- theme ---- */
+  function currentTheme() {
+    const explicit = document.documentElement.getAttribute('data-theme');
+    if (explicit) return explicit;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+
+  function refreshThemeButton() {
+    const dark = currentTheme() === 'dark';
+    const btn = document.getElementById('themeBtn');
+    btn.setAttribute('aria-label', dark ? 'Switch to light theme' : 'Switch to dark theme');
+    btn.title = btn.getAttribute('aria-label');
+    btn.querySelector('use').setAttribute('href', dark ? '#i-sun' : '#i-moon');
+  }
+
+  document.getElementById('themeBtn').addEventListener('click', () => {
+    const next = currentTheme() === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    try { localStorage.setItem('dashboardTheme', next); } catch (e) { /* ignore */ }
+    refreshThemeButton();
+  });
+
+  window.matchMedia('(prefers-color-scheme: dark)')
+    .addEventListener('change', refreshThemeButton);
+
+  refreshThemeButton();
+
+  /* ---- data ---- */
   function loadAccounts() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -268,7 +610,7 @@
 
   function render() {
     const query = searchBox.value.trim().toLowerCase();
-    tableBody.innerHTML = '';
+    tableBody.textContent = '';
 
     const filtered = accounts.filter(a => {
       if (!query) return true;
@@ -286,6 +628,7 @@
       const siteInput = document.createElement('input');
       siteInput.type = 'text';
       siteInput.placeholder = 'e.g. Google';
+      siteInput.setAttribute('aria-label', 'Account or site name');
       siteInput.value = acc.site || '';
       siteInput.addEventListener('input', () => { acc.site = siteInput.value; saveAccounts(); });
       siteTd.appendChild(siteInput);
@@ -294,6 +637,7 @@
       const urlInput = document.createElement('input');
       urlInput.type = 'text';
       urlInput.placeholder = 'https://…';
+      urlInput.setAttribute('aria-label', 'Site URL');
       urlInput.value = acc.url || '';
       urlInput.addEventListener('input', () => { acc.url = urlInput.value; saveAccounts(); });
       urlTd.appendChild(urlInput);
@@ -302,6 +646,7 @@
       const userInput = document.createElement('input');
       userInput.type = 'text';
       userInput.placeholder = 'username or email';
+      userInput.setAttribute('aria-label', 'Username or login');
       userInput.value = acc.username || '';
       userInput.addEventListener('input', () => { acc.username = userInput.value; saveAccounts(); });
       userTd.appendChild(userInput);
@@ -310,7 +655,7 @@
       passkeyTd.className = 'checkbox-cell';
       const passkeyCb = document.createElement('input');
       passkeyCb.type = 'checkbox';
-      passkeyCb.title = 'Site uses passkey?';
+      passkeyCb.setAttribute('aria-label', `Site uses passkey${acc.site ? ' for ' + acc.site : ''}`);
       passkeyCb.checked = !!acc.passkey;
       passkeyCb.addEventListener('change', () => { acc.passkey = passkeyCb.checked; saveAccounts(); });
       passkeyTd.appendChild(passkeyCb);
@@ -319,6 +664,7 @@
       pwTd.className = 'checkbox-cell';
       const pwCb = document.createElement('input');
       pwCb.type = 'checkbox';
+      pwCb.setAttribute('aria-label', `30+ character password${acc.site ? ' for ' + acc.site : ''}`);
       pwCb.checked = !!acc.strongPassword;
       pwCb.addEventListener('change', () => { acc.strongPassword = pwCb.checked; saveAccounts(); });
       pwTd.appendChild(pwCb);
@@ -327,6 +673,7 @@
       const notesInput = document.createElement('textarea');
       notesInput.rows = 1;
       notesInput.placeholder = 'notes';
+      notesInput.setAttribute('aria-label', 'Notes');
       notesInput.value = acc.notes || '';
       notesInput.addEventListener('input', () => { acc.notes = notesInput.value; saveAccounts(); });
       notesTd.appendChild(notesInput);
@@ -334,13 +681,32 @@
       const actionsTd = document.createElement('td');
       actionsTd.className = 'row-actions';
       const delBtn = document.createElement('button');
-      delBtn.textContent = 'Delete';
-      delBtn.addEventListener('click', () => {
-        if (confirm(`Remove "${acc.site || 'this account'}"?`)) {
-          accounts = accounts.filter(a => a.id !== acc.id);
-          saveAccounts();
-          render();
-        }
+      delBtn.type = 'button';
+      delBtn.className = 'icon-btn';
+      const label = `Remove ${acc.site || 'this account'}`;
+      delBtn.setAttribute('aria-label', label);
+      delBtn.title = label;
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('class', 'icon');
+      svg.setAttribute('aria-hidden', 'true');
+      const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+      use.setAttribute('href', '#i-trash');
+      svg.appendChild(use);
+      delBtn.appendChild(svg);
+      delBtn.addEventListener('click', async () => {
+        const ok = await ask({
+          title: `Remove ${acc.site || 'this account'}?`,
+          body: 'This deletes the row from your tracker. The account itself is untouched.',
+          choices: [
+            { label: 'Cancel', value: false },
+            { label: 'Remove', value: true, danger: true }
+          ]
+        });
+        if (!ok) return;
+        accounts = accounts.filter(a => a.id !== acc.id);
+        saveAccounts();
+        render();
+        announce(`${acc.site || 'Account'} removed.`);
       });
       actionsTd.appendChild(delBtn);
 
@@ -363,6 +729,7 @@
     render();
     const firstInput = tableBody.querySelector('input[type="text"]');
     if (firstInput) firstInput.focus();
+    announce('Account row added.');
   });
 
   searchBox.addEventListener('input', render);
@@ -376,38 +743,61 @@
     a.download = `passkey-tracker-backup-${stamp}.json`;
     a.click();
     URL.revokeObjectURL(url);
+    announce(`Exported ${accounts.length} account${accounts.length === 1 ? '' : 's'}.`);
   });
 
   const importFile = document.getElementById('importFile');
   document.getElementById('importBtn').addEventListener('click', () => importFile.click());
+
   importFile.addEventListener('change', () => {
     const file = importFile.files[0];
     if (!file) return;
+
     const reader = new FileReader();
-    reader.onload = () => {
+    reader.onload = async () => {
+      let parsed;
       try {
-        const parsed = JSON.parse(reader.result);
+        parsed = JSON.parse(reader.result);
         if (!Array.isArray(parsed)) throw new Error('not an array');
-        const merge = accounts.length > 0
-          ? confirm('Merge with existing accounts? Click Cancel to replace everything instead.')
-          : true;
-        const normalized = parsed.map(a => ({
-          id: a.id || makeId(),
-          site: a.site || '',
-          url: a.url || '',
-          username: a.username || '',
-          passkey: !!a.passkey,
-          strongPassword: !!a.strongPassword,
-          notes: a.notes || ''
-        }));
-        accounts = merge ? accounts.concat(normalized) : normalized;
-        saveAccounts();
-        render();
       } catch (e) {
-        alert('That file does not look like a valid backup.');
-      } finally {
+        await ask({
+          title: 'That file could not be read',
+          body: `${file.name} is not a valid tracker backup, so nothing was changed.`,
+          choices: [{ label: 'OK', value: true, primary: true }]
+        });
         importFile.value = '';
+        return;
       }
+
+      const normalized = parsed.map(a => ({
+        id: a.id || makeId(),
+        site: a.site || '',
+        url: a.url || '',
+        username: a.username || '',
+        passkey: !!a.passkey,
+        strongPassword: !!a.strongPassword,
+        notes: a.notes || ''
+      }));
+
+      let mode = 'replace';
+      if (accounts.length > 0) {
+        mode = await ask({
+          title: 'Merge or replace?',
+          body: `${file.name} contains ${normalized.length} account${normalized.length === 1 ? '' : 's'}. You currently have ${accounts.length}. Merging keeps both; replacing discards what is here now.`,
+          choices: [
+            { label: 'Cancel', value: null },
+            { label: 'Replace', value: 'replace', danger: true },
+            { label: 'Merge', value: 'merge', primary: true }
+          ]
+        });
+        if (!mode) { importFile.value = ''; return; }
+      }
+
+      accounts = mode === 'merge' ? accounts.concat(normalized) : normalized;
+      saveAccounts();
+      render();
+      announce(`Imported ${normalized.length} account${normalized.length === 1 ? '' : 's'}.`);
+      importFile.value = '';
     };
     reader.readAsText(file);
   });
