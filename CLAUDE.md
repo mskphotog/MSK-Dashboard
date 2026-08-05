@@ -2,6 +2,12 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Read first
+
+**[HANDOFF.md](HANDOFF.md)** — running state, decisions already made, and what is deliberately unfinished. Read it before proposing changes; it holds the reasoning the code can't show you, including several choices that should not be quietly reversed. Update it when a session changes direction or settles something.
+
+Also: [PRODUCT.md](PRODUCT.md) for who uses this and what must never break, and [DESIGN.md](DESIGN.md) for the visual system and its named rules. DESIGN.md is normative for anything visual.
+
 ## Running the App
 
 This is a zero-build project — open `index.html` directly in a browser or serve it locally:
@@ -16,7 +22,15 @@ No build step, no dependencies, no package.json.
 
 ## Architecture
 
-The entire application lives in `index.html` as a single file: CSS in `<style>`, markup in `<body>`, and all logic in a `<script>` block.
+Three self-contained pages, each with CSS in `<style>`, markup in `<body>`, and all logic in a `<script>` block:
+
+- `index.html` — the dashboard (the launcher and hub)
+- `ollama-chat.html` — chat against a local Ollama at `localhost:11434`; model chosen via `?model=`
+- `passkey-tracker.html` — tracks which accounts have passkeys and strong passwords
+
+**Design tokens are duplicated in all three files** as `:root` custom properties, with light, dark, and explicit `[data-theme]` overrides. This is deliberate: a shared stylesheet would break the "every page opens directly" constraint. DESIGN.md holds the canonical values — change them there and in all three files together.
+
+**Theme** — all three read and write the same `dashboardTheme` key, applied before paint by a small script in `<head>` to avoid a flash. Same origin, so one choice carries across the whole product.
 
 **State model** — two arrays/objects in memory, each persisted to `localStorage`:
 - `apps` (key: `dashboardAppsGrid`) — array of `{ id, name, url, category, type }` objects. `id` is a `Date.now()` string. `type` is `"popup"` or `"tab"`.
@@ -26,10 +40,19 @@ The entire application lives in `index.html` as a single file: CSS in `<style>`,
 
 **Category slugs** — `slugifyCategoryName()` converts a user-typed label to a URL-safe key. `getUniqueCategoryKey()` handles collisions. The slug is stored on each app as `app.category`; the human label lives only in `categoryLabels`.
 
-**Drag-and-drop** — two independent systems share the same render cycle:
+**Cards are `<a href>` elements**, not divs. The click handler intercepts only popup-mode launches and bails on modified clicks (`metaKey`, `ctrlKey`, `shiftKey`, `altKey`) so ⌘-click, middle-click and the context menu behave natively. Popup windows are held in a `Map` keyed by app id so a re-click focuses the existing window. **Do not put `noopener` in the `window.open` features string** — it forces `_blank`, discards the window name, and reintroduces duplicate windows on every click.
+
+**Arrange mode** (`editMode`) — a whole-page state. At rest the page is destinations only. Toggling Arrange reveals per-card edit/delete and per-category rename/delete/move controls, and enables dragging. Editing affordances exist *only* in this mode, which is what keeps the resting page scannable and gives every control a keyboard path.
+
+**Drag-and-drop** — two independent systems share the same render cycle, both confined to Arrange mode (at rest, cards are links and drag natively):
 - *Card reordering* within a category: `getDragAfterElement()` uses 2D distance to the center of each card to handle multi-column grid layout. On drop, `syncCategoryOrderFromDOM()` reads DOM order and rewrites the `apps` array in-place.
 - *Category reordering*: `getCategoryDragAfterElement()` compares only vertical position (categories are single-column). On drop, `syncCategoryListOrderFromDOM()` rebuilds `categoryLabels` with keys in the new DOM order. The two drag systems are kept separate via `draggedFromCategory` and `draggedCategoryKey` flags.
+- A cancelled drag re-renders from state, so the DOM and `localStorage` can't silently diverge. Alt+arrow reorders by keyboard.
 
-**Import/Export** — Export serializes `{ apps, categoryLabels }` as a JSON download. Import accepts either that combined format or a legacy plain `apps` array.
+**Dialogs** — native `<dialog>` throughout, via the `askConfirm()` / `askText()` helpers. No `prompt()`, `confirm()` or `alert()` anywhere in the project; the native `<dialog>` brings a focus trap, Esc, backdrop dismissal and an inert background, and stays out of the tab order when closed.
+
+**Import/Export** — Export serializes `{ apps, categoryLabels }` as a dated JSON download. Import accepts either that combined format or a legacy plain `apps` array, **and this backward compatibility must be preserved** — export files are the owner's sync mechanism between devices. Before overwriting, the current state is snapshotted to `dashboardBackupPrev` and a Restore control appears.
+
+**Building card DOM** — use `textContent`, never `innerHTML` with interpolated app data. Import is the sync path, so a tampered file would otherwise execute script on load.
 
 **PWA setup** — `sw.js` is intentionally self-destructing (it unregisters itself on activate) to prevent stale service worker caching during development. The cache-buster block at the top of `<head>` also aggressively clears caches and unregisters service workers on every page load. Do not replace this with a real caching service worker without understanding the implications.
