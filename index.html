@@ -1496,7 +1496,10 @@
         if (!name || !url || !category) return;
 
         if (id) {
-            const existing = apps.find(a => a.id === id);
+            // The hidden field always hands back a string, but cards saved by
+            // older versions (and hand-edited import files) can carry a number
+            // in `id`. Compare as strings or the edit silently does nothing.
+            const existing = apps.find(a => String(a.id) === id);
             if (existing) Object.assign(existing, { name, url, category, type });
             announce(`${name} updated.`);
         } else {
