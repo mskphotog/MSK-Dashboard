@@ -8,16 +8,26 @@ Running state of the project: what was decided, what is deliberately unfinished,
 
 ---
 
-## State as of 5 Aug 2026
+## State as of 14 Aug 2026
 
-`main` at `63d37e6`, pushed, working tree clean. All three pages share one visual system.
+`main` at `ba196d8`, pushed, working tree clean. All three pages share one visual system.
 
-Two commits did the work:
+The rebuild was two commits:
 
 - **`3f5cb1a`** — rebuilt the dashboard's interaction layer and added PRODUCT.md / DESIGN.md.
 - **`63d37e6`** — brought `ollama-chat.html` and `passkey-tracker.html` onto that system.
 
+Since then: **`aa14f11`** settled the favicon (see below), and **`ba196d8`** fixed editing.
+
 The visual layer had always been sound; the interaction layer had never been built. Two genuine bugs were found and fixed: every launch target was a `<div>` (nothing reachable by keyboard, no browser affordances), and `noopener` inside the `window.open` features string was discarding the window name, so popup mode spawned a duplicate window on every click.
+
+### Editing an app silently did nothing (`ba196d8`)
+
+Reported as "somewhere along the line I lost the ability to modify the existing Apps." Two things were behind it, and only one was a bug.
+
+The bug: the submit handler looked up the app with `apps.find(a => a.id === id)`, where `id` comes from the dialog's hidden field and is therefore **always a string**. Cards saved by earlier versions carry a **number** in `id`, so the strict comparison never matched them — the dialog closed and announced "updated" while the app was left untouched. Delete and drag were never affected, because they compare the app object's id to itself. The fix coerces with `String(a.id) === id`. Verified in Chrome on a throwaway port with one string-id and one number-id card.
+
+The other half was not a bug: **the edit affordance moved in the rebuild.** It used to appear on card hover (`.card:hover .card-actions`); it now lives only in Arrange mode, which is the "at rest the page is destinations only" decision below. Worth knowing that the change reads as a loss to someone who learned the hover gesture — but the affordance was deliberately relocated, not removed, so it stays where it is unless the owner asks otherwise.
 
 A UX critique of `index.html` scored **14/36 (Poor)** before the rebuild — every visual heuristic at 2, every interaction heuristic at 1. The snapshot is in `.impeccable/critique/`, so a re-run shows movement rather than a fresh baseline. **It has not been re-run since the rebuild.**
 
@@ -48,7 +58,7 @@ These came from the owner directly. Don't quietly reverse them.
 
 **Three product questions remain unanswered** and are recorded as undecided in PRODUCT.md rather than guessed at: whether the zero-build architecture is a permanent rule, whether true offline support is a goal (it is not supported today — the cache-buster and self-destructing service worker actively prevent it), and whether mobile/tablet matters beyond the confirmed Mac desktop.
 
-**The favicon is undecided.** Eight candidate marks sit in `favicons/` with a `preview.html` to compare them; none has been chosen. The live icon is an inline SVG data URI.
+**~~The favicon is undecided.~~ Settled in `aa14f11`** — the M monogram (`favicons/favicon-2-monogram.svg`), a bold M in Instrument Blue on paper, now applies to all three pages and the PWA manifest icons. The eight candidates and their `preview.html` remain in `favicons/` as a record of what was considered.
 
 ---
 
@@ -56,7 +66,7 @@ These came from the owner directly. Don't quietly reverse them.
 
 1. **Re-run the critique** (`/impeccable critique index.html`) to score the rebuild against the 14/36 baseline.
 2. **Run an audit** (`/impeccable audit`) — the critique covered UX heuristics; the technical a11y / performance / responsive pass hasn't been done.
-3. **Pick a favicon** from `favicons/preview.html`.
+3. **Check whether other id comparisons need the same coercion `ba196d8` applied.** That fix was scoped to the edit-save path, which is where the failure showed up; nothing else compares an id round-tripped through the DOM today, but a future control that does will hit the same trap. Normalising ids to strings on load would close it off for good, at the cost of rewriting stored data.
 
 Before any of that, the owner should open the dashboard, toggle the theme, and launch a Local LLM chat from a card — that exercises both P0 fixes at once.
 
