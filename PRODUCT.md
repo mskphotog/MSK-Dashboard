@@ -28,12 +28,12 @@ It is built for exactly one person's actual stack, so it can do things a general
 ## Operating Context
 
 - **Categories are user-defined and evolve.** Live categories are `Stack / Tools / Assets`, `Google Stuff / Email`, `LLMs`, `Local LLMs` — not the code's shipped defaults. Category names, order, and card order within a category are all arranged by hand via drag-and-drop; that arrangement carries meaning and must survive any redesign.
-- **Multi-device by manual transfer.** Export and Import exist specifically so Mark can move his configuration between devices. There is no account, sync service, or server — a JSON file is the transport. Both directions must keep working, and the export format is effectively a save file.
+- **Multi-device through one server.** The configuration lives in a SQLite database on Mark's Omarchy box, reached over Tailscale at `100.73.36.36:20006` and nowhere else. Every device sees the same data with nothing to import. Export and Import remain as the backup path and for moving data in; both directions must keep working, and the export format is effectively a save file.
 - **Two window modes.** Each app is launched either as a compact popup utility window or a standard browser tab, chosen per app. Local LLM chats and small tools suit the popup; full dashboards suit a tab.
 - **Multiple identities in one place.** Several entries are the same service under different accounts (e.g. Gmail as `mskphotog` vs. a work address). Distinguishing near-identical entries at a glance is a real part of the job.
 - **Local services are first-class.** Entries point at `localhost:8080` and `localhost/…` alongside public URLs. Links that only resolve on this machine are expected, not broken.
 - **Manual annotations in names.** LLM entries carry hand-written knowledge-cutoff tags like `(C/O - Jan25)`. This is Mark's convention, maintained by hand in the app name field.
-- **Runs from a local server.** Pages are served at `localhost:8080` (`npx serve .` / `python3 -m http.server 8080`), which is also how the hosted tool pages address each other.
+- **Runs from `server.py` on the tailnet.** It serves the pages and the data API. Cards that point at `localhost:8080` were written for the old setup and need repointing; the sibling pages are now at the Tailscale address.
 
 ## Capabilities and Constraints
 
@@ -46,12 +46,12 @@ It is built for exactly one person's actual stack, so it can do things a general
 - Installable as a PWA (`manifest.json`, standalone display).
 
 **Technical constraints (incumbent, observed):**
-- Zero build. No package.json, no dependencies, no bundler. Every page is a single self-contained HTML file with inline CSS and JS, openable directly.
-- All state is `localStorage` on the device. No backend, no accounts, no network persistence.
+- Zero build. No package.json, no dependencies, no bundler. The server is the Python standard library plus SQLite. Pages keep inline CSS and JS, and share one small `store.js`; they no longer open from `file://` because their data comes from the API.
+- All state is in SQLite on the server, behind `server.py`. No accounts: the tailnet is the access control. Only the theme and the Restore snapshot stay in `localStorage`.
 - `sw.js` is deliberately self-destructing and `index.html` clears caches on load, to prevent stale service-worker caching during development.
 
 **Explicitly undecided — do not assume either way:**
-- Whether the zero-build / single-file / local-only architecture is a permanent rule or the current convenient state. Treat it as binding until Mark says otherwise, and ask before introducing a build step, dependency, or backend.
+- Whether the zero-build / no-dependency rule is permanent. Treat it as binding until Mark says otherwise, and ask before introducing a build step or a dependency. (A backend was approved on 16 Oct 2026, as the stdlib server above.)
 - Whether true offline operation is a goal. It is not currently supported (the cache-buster and self-destructing service worker actively prevent it), and no one has asked for it.
 - Whether mobile/tablet use matters. Desktop Mac browser is confirmed; other devices exist but their role is unstated.
 

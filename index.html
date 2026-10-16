@@ -621,7 +621,7 @@
                 <svg class="icon" aria-hidden="true"><use href="#i-download"></use></svg>
                 Export
             </button>
-            <button class="btn btn-secondary" id="importBtn" title="Replace this device's configuration from a file">
+            <button class="btn btn-secondary" id="importBtn" title="Replace the whole configuration from a file">
                 <svg class="icon" aria-hidden="true"><use href="#i-upload"></use></svg>
                 Import
             </button>
@@ -699,12 +699,11 @@
         </div>
     </dialog>
 
+<script src="store.js"></script>
 <script>
     /* ==============================================================
        State
        ============================================================== */
-    const STORAGE_APPS = 'dashboardAppsGrid';
-    const STORAGE_CATS = 'dashboardCategories';
     const STORAGE_BACKUP = 'dashboardBackupPrev';
     const STORAGE_THEME = 'dashboardTheme';
 
@@ -743,40 +742,47 @@
     /* ==============================================================
        Storage
        ============================================================== */
-    function loadCategories() {
-        const saved = localStorage.getItem(STORAGE_CATS);
-        if (saved) {
-            try {
-                const parsed = JSON.parse(saved);
-                if (parsed && typeof parsed === 'object' && Object.keys(parsed).length) {
-                    categoryLabels = parsed;
-                }
-            } catch (e) {
-                announce('Saved categories were unreadable; using defaults.');
-            }
-        }
-    }
+    // The apps and categories live in the server's database and are saved
+    // together as one document (see store.js). saveApps() and saveCategories()
+    // keep their old names so every mutation site is unchanged; a call to
+    // either, or both back to back, becomes a single write.
+    const defaultCategories = { ...categoryLabels };
 
-    function saveCategories() {
-        localStorage.setItem(STORAGE_CATS, JSON.stringify(categoryLabels));
-    }
-
-    function loadApps() {
-        const saved = localStorage.getItem(STORAGE_APPS);
-        if (saved) {
-            try {
-                apps = JSON.parse(saved);
-            } catch (e) {
-                apps = [...defaultApps];
-            }
+    // Take on a document from the server, whether from the first load, a
+    // refresh, or the copy a conflict hands back.
+    function adoptState(doc) {
+        if (doc.initialized) {
+            apps = doc.apps;
+            categoryLabels = Object.keys(doc.categoryLabels).length
+                ? doc.categoryLabels
+                : { ...defaultCategories };
         } else {
+            // Nothing saved yet. Defaults stay in memory only; the first
+            // change the owner makes is the first write.
             apps = [...defaultApps];
+            categoryLabels = { ...defaultCategories };
         }
     }
 
-    function saveApps() {
-        localStorage.setItem(STORAGE_APPS, JSON.stringify(apps));
+    const store = MSKStore.create('dashboard', {
+        onConflict: async (latest) => {
+            adoptState(latest);
+            populateCategoryDropdown();
+            renderDashboard();
+            await askConfirm({
+                title: 'The dashboard changed elsewhere',
+                body: 'Another device saved changes after this page loaded, so your last change was not saved. The latest version is showing now; make the change again if you still want it.',
+                confirmLabel: 'OK'
+            });
+        }
+    });
+
+    function persist() {
+        store.save(() => ({ apps, categoryLabels }));
     }
+
+    function saveCategories() { persist(); }
+    function saveApps() { persist(); }
 
     /* ==============================================================
        Helpers
@@ -1557,7 +1563,7 @@
             } catch (err) {
                 await askConfirm({
                     title: 'That file could not be read',
-                    body: `${file.name} is not valid JSON, so nothing was changed. Export a fresh copy from the other device and try again.`,
+                    body: `${file.name} is not valid JSON, so nothing was changed. Export a fresh copy and try again.`,
                     confirmLabel: 'OK'
                 });
                 event.target.value = '';
@@ -1587,8 +1593,8 @@
             }
 
             const ok = await askConfirm({
-                title: 'Replace everything on this device?',
-                body: `${file.name} contains ${summarise(nextApps, nextCats)}. This device currently has ${summarise(apps, categoryLabels)}. Importing replaces all of it, including the order you arranged by hand. You can undo this with Restore.`,
+                title: 'Replace the whole dashboard?',
+                body: `${file.name} contains ${summarise(nextApps, nextCats)}. The dashboard currently has ${summarise(apps, categoryLabels)}. Importing replaces all of it, including the order you arranged by hand. You can undo this with Restore.`,
                 confirmLabel: 'Replace',
                 danger: true
             });
@@ -1693,12 +1699,33 @@
     document.getElementById('addAppBtn').addEventListener('click', () => openAppDialog(null));
     document.getElementById('addCategoryBtn').addEventListener('click', addCategory);
 
-    loadCategories();
-    loadApps();
-    populateCategoryDropdown();
-    renderDashboard();
     refreshRestoreButton();
     refreshThemeButton();
+
+    async function boot() {
+        try {
+            adoptState(await store.load());
+        } catch (e) {
+            MSKStore.showNotice('Can’t reach the dashboard server.', 'Try again', boot);
+            return;
+        }
+        populateCategoryDropdown();
+        renderDashboard();
+    }
+    boot();
+
+    // A change saved on another machine shows up when this tab is next looked
+    // at. Skipped mid-arrange or with a dialog open, where a re-render would
+    // pull the page out from under the hand.
+    document.addEventListener('visibilitychange', async () => {
+        if (document.visibilityState !== 'visible') return;
+        if (editMode || document.querySelector('dialog[open]')) return;
+        const latest = await store.refresh();
+        if (!latest || editMode || document.querySelector('dialog[open]')) return;
+        adoptState(latest);
+        populateCategoryDropdown();
+        renderDashboard();
+    });
 </script>
 </body>
 </html>

@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Passkey &amp; Password Tracker</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23f2f0ec'/%3E%3Cpolyline points='7,25 7,7 16,17 25,7 25,25' fill='none' stroke='%233654d1' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<!-- Same manifest as the dashboard, so this page belongs to the installed
+     app rather than reading as a separate site. start_url stays index.html:
+     installing from here still installs the dashboard. -->
+<link rel="manifest" href="manifest.json">
 <script>
     // Same key as the dashboard, so one theme choice carries across every
     // page in the product. Applied before paint to avoid a flash.
@@ -441,7 +445,7 @@
       <svg class="icon" aria-hidden="true"><use href="#i-moon"></use></svg>
     </button>
   </div>
-  <p class="subtitle">Track which accounts have a passkey set up and a strong (30+ character) password. Everything stays on this device — nothing is sent anywhere.</p>
+  <p class="subtitle">Track which accounts have a passkey set up and a strong (30+ character) password. Everything is saved on your own dashboard server — nothing goes to an outside service.</p>
 
   <div class="stats">
     <div class="stat"><div class="num" id="statTotal">0</div><div class="label">Accounts</div></div>
@@ -478,7 +482,7 @@
   <div class="empty-state" id="emptyState" style="display:none">No accounts yet. Click "Add account" to start tracking.</div>
 
   <div class="footer-actions">
-    <span class="save-indicator" id="saveIndicator">Saved locally in this browser</span>
+    <span class="save-indicator" id="saveIndicator">Saved to the dashboard server</span>
     <div class="file-controls">
       <button class="btn" id="exportBtn">
         <svg class="icon" aria-hidden="true"><use href="#i-download"></use></svg>
@@ -501,9 +505,9 @@
   <div class="dialog-actions" id="confirmActions"></div>
 </dialog>
 
+<script src="store.js"></script>
 <script>
 (function () {
-  const STORAGE_KEY = 'passkeyTrackerAccounts';
   const tableBody = document.getElementById('tableBody');
   const emptyState = document.getElementById('emptyState');
   const searchBox = document.getElementById('searchBox');
@@ -578,17 +582,23 @@
   refreshThemeButton();
 
   /* ---- data ---- */
-  function loadAccounts() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? JSON.parse(raw) : [];
-    } catch (e) {
-      return [];
+  // Accounts live in the server's database (see store.js). Edits are saved a
+  // moment after typing stops, so a keystroke is not a network request.
+  const store = MSKStore.create('passkeys', {
+    delay: 400,
+    onConflict: async (latest) => {
+      accounts = latest.accounts || [];
+      render();
+      await ask({
+        title: 'The tracker changed elsewhere',
+        body: 'Another device saved changes after this page loaded, so your last edit was not saved. The latest version is showing now; make the edit again if you still want it.',
+        choices: [{ label: 'OK', value: true, primary: true }]
+      });
     }
-  }
+  });
 
   function saveAccounts() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(accounts));
+    store.save(() => ({ accounts }));
     updateStats();
   }
 
@@ -596,7 +606,7 @@
     return 'acc_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
   }
 
-  let accounts = loadAccounts();
+  let accounts = [];
 
   function updateStats() {
     const total = accounts.length;
@@ -803,7 +813,27 @@
     reader.readAsText(file);
   });
 
-  render();
+  async function boot() {
+    try {
+      const doc = await store.load();
+      accounts = doc.accounts || [];
+    } catch (e) {
+      MSKStore.showNotice('Can\u2019t reach the dashboard server.', 'Try again', boot);
+      return;
+    }
+    render();
+  }
+  boot();
+
+  // Changes saved on another machine appear when this tab is next looked at.
+  document.addEventListener('visibilitychange', async () => {
+    if (document.visibilityState !== 'visible') return;
+    if (document.querySelector('dialog[open]')) return;
+    const latest = await store.refresh();
+    if (!latest || document.querySelector('dialog[open]')) return;
+    accounts = latest.accounts || [];
+    render();
+  });
 })();
 </script>
 </body>

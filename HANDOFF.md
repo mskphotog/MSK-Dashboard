@@ -33,6 +33,24 @@ A UX critique of `index.html` scored **14/36 (Poor)** before the rebuild — eve
 
 ---
 
+## Moved to the Omarchy box (16 Oct 2026, uncommitted)
+
+The dashboard now runs from `server.py` on the Omarchy box, bound to the Tailscale IP `100.73.36.36:20006` only, with its data in SQLite instead of per-browser `localStorage` and hand-carried JSON. The owner chose, in order: Python stdlib + SQLite, move the passkey tracker's data too, deploy by `git pull` + a systemd user service, retire Netlify and keep Export/Import as backup. Steps are in [deploy/README.md](deploy/README.md).
+
+- **`server.py`** serves an allowlist of files and `GET`/`PUT /api/dashboard` and `/api/passkeys`. Writes replace the whole document in one transaction, storing a `position` per row, so the hand-set order is kept exactly. A daily snapshot goes to `backups/` before the first write of the day. It refuses a wildcard bind, rejects non-JSON and cross-origin writes, and sends `no-store`.
+- **`store.js`** is the one shared script. It queues saves so only one is in flight, and sends `baseRev` with each. A stale write gets a 409 and the page adopts the server's copy with a dialog saying so; nothing is merged. A tab refetches when it becomes visible again (not mid-Arrange or with a dialog open). A failed save shows a notice and retries with backoff. The notice shows only on failure.
+- **Ids are now always strings**, because SQLite stores them as text. This closes off the id-coercion trap in "Where to pick up" #3, and the latent bug where drag-reorder dropped number-id cards.
+- **`sw.js` and the cache-buster are untouched.** Pages are served over plain HTTP on a non-localhost address, which is not a secure context, so Chrome will not offer to install the PWA from there. Tailscale's own HTTPS (`tailscale serve`) would change that, but it changes the address, so it is the owner's call.
+- **Tested** on a throwaway port in Chrome: load, add and round trip (order and string ids preserved), conflict dialog, passkey debounce, outage and recovery. **Not tested on the box itself**, and not run on `100.73.36.36`.
+
+### Things the move changes that the code doesn't fix
+
+- **`ollama-chat.html` still calls `http://localhost:11434`.** From the new address that is the *viewing* machine's Ollama, and Ollama only accepts its default localhost origins, so it will refuse requests from `http://100.73.36.36:20006` unless `OLLAMA_ORIGINS` allows it on each machine. Not changed; pick between allowing that origin or pointing the page at the box's Ollama.
+- **Cards that point at `localhost:8080`** (the sibling pages) need repointing.
+- **Data does not carry over by itself.** The new origin starts empty; Export on the old dashboard, Import on the new one, once (same for the tracker).
+
+---
+
 ## Decisions that constrain future work
 
 These came from the owner directly. Don't quietly reverse them.
@@ -54,9 +72,9 @@ These came from the owner directly. Don't quietly reverse them.
 
 **Card border contrast (~1.5:1 light, 1.8:1 dark).** Up from 1.16:1 but short of the 3:1 WCAG 1.4.11 asks of component boundaries. Reaching 3:1 needs roughly `#8d8676`, which turns the paper room into a wireframe and destroys the tone-step depth model the system rests on. The card is identified by its label at 14:1 and its state changes are high-contrast. This was a conscious trade, not an oversight — reopen it only with a plan that doesn't wreck the depth model.
 
-**Design tokens are duplicated across all three HTML files.** The cost of the zero-build, self-contained-page constraint. A shared `tokens.css` would fix it but breaks "every page opens directly." Each file carries a comment saying so. If that constraint is ever relaxed, this is the first thing to collapse.
+**Design tokens are duplicated across all three HTML files.** The cost of keeping each page self-contained. Pages can no longer open from `file://` now that they need the API, so a shared `tokens.css` served by `server.py` is possible; it was not done in the move. Each file carries a comment saying so. If that constraint is ever relaxed, this is the first thing to collapse.
 
-**Three product questions remain unanswered** and are recorded as undecided in PRODUCT.md rather than guessed at: whether the zero-build architecture is a permanent rule, whether true offline support is a goal (it is not supported today — the cache-buster and self-destructing service worker actively prevent it), and whether mobile/tablet matters beyond the confirmed Mac desktop.
+**Three product questions remain unanswered** and are recorded as undecided in PRODUCT.md rather than guessed at: whether zero-build is a permanent rule, whether true offline support is a goal (it is not supported today — the cache-buster and self-destructing service worker actively prevent it), and whether mobile/tablet matters beyond the confirmed Mac desktop.
 
 **~~The favicon is undecided.~~ Settled in `aa14f11`** — the M monogram (`favicons/favicon-2-monogram.svg`), a bold M in Instrument Blue on paper, now applies to all three pages and the PWA manifest icons. The eight candidates and their `preview.html` remain in `favicons/` as a record of what was considered.
 

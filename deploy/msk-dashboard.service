@@ -1,0 +1,21 @@
+# User service: install to ~/.config/systemd/user/msk-dashboard.service
+#
+# Assumes the repo is cloned to ~/msk-dashboard. A user unit can't be ordered
+# after tailscaled, so if the Tailscale address isn't up yet the bind fails
+# and Restart= tries again until it is.
+
+[Unit]
+Description=MSK-Dashboard
+After=network-online.target
+
+[Service]
+ExecStart=/usr/bin/python3 %h/msk-dashboard/server.py
+WorkingDirectory=%h/msk-dashboard
+Environment=MSK_HOST=100.73.36.36
+Environment=MSK_PORT=20006
+Environment=MSK_DB=%h/.local/share/msk-dashboard/dashboard.db
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

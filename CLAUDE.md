@@ -10,19 +10,17 @@ Also: [PRODUCT.md](PRODUCT.md) for who uses this and what must never break, and 
 
 ## Running the App
 
-This is a zero-build project — open `index.html` directly in a browser or serve it locally:
+The product is served by `server.py` — Python standard library plus SQLite, no build step, no dependencies, no package.json. It serves the pages and stores their data. By default it binds the Tailscale address `100.73.36.36:20006` only; to run it on your own machine, override the bind:
 
 ```bash
-npx serve .
-# or
-python3 -m http.server 8080
+MSK_HOST=127.0.0.1 MSK_PORT=8080 MSK_DB=/tmp/dev.db python3 server.py
 ```
 
-No build step, no dependencies, no package.json.
+The pages no longer work from `file://` or a plain static server, because their data comes from `/api/*`. Deployment to the Omarchy box is in [deploy/README.md](deploy/README.md).
 
 ## Architecture
 
-Three self-contained pages, each with CSS in `<style>`, markup in `<body>`, and all logic in a `<script>` block:
+Three pages, each with CSS in `<style>`, markup in `<body>`, and its logic in a `<script>` block, plus `store.js` (the shared client for saving to the server) and `server.py`:
 
 - `index.html` — the dashboard (the launcher and hub)
 - `ollama-chat.html` — chat against a local Ollama at `localhost:11434`; model chosen via `?model=`
@@ -32,9 +30,9 @@ Three self-contained pages, each with CSS in `<style>`, markup in `<body>`, and 
 
 **Theme** — all three read and write the same `dashboardTheme` key, applied before paint by a small script in `<head>` to avoid a flash. Same origin, so one choice carries across the whole product.
 
-**State model** — two arrays/objects in memory, each persisted to `localStorage`:
-- `apps` (key: `dashboardAppsGrid`) — array of `{ id, name, url, category, type }` objects. `id` is a `Date.now()` string. `type` is `"popup"` or `"tab"`.
-- `categoryLabels` (key: `dashboardCategories`) — plain object mapping internal slug keys (e.g. `"local"`) to display names (e.g. `"Local PWAs"`). **This object is the single source of truth for which categories exist.** Adding or deleting a key is all it takes to create or remove a category.
+**State model** — two arrays/objects in memory, persisted to SQLite on the server as one document (`GET`/`PUT /api/dashboard`). `store.js` turns `saveApps()` / `saveCategories()` calls into whole-document PUTs, one at a time, carrying a `baseRev`; a stale write gets a 409 with the current document and the page adopts it. Tables keep a `position` column, so hand-set order is stored, never derived. Only the theme (`dashboardTheme`) and the Restore snapshot stay in `localStorage`. The passkey tracker's accounts work the same way (`/api/passkeys`).
+- `apps` — array of `{ id, name, url, category, type }` objects. `id` is a `Date.now()` string (the server always returns ids as strings). `type` is `"popup"` or `"tab"`.
+- `categoryLabels` — plain object mapping internal slug keys (e.g. `"local"`) to display names (e.g. `"Local PWAs"`). **This object is the single source of truth for which categories exist.** Adding or deleting a key is all it takes to create or remove a category.
 
 **Rendering** — `renderDashboard()` is a full re-render; it clears `#dashboardContainer` and rebuilds all DOM from the two state objects. It's called after every state mutation. There is no virtual DOM or diff — just wipe and rebuild.
 
@@ -47,11 +45,11 @@ Three self-contained pages, each with CSS in `<style>`, markup in `<body>`, and 
 **Drag-and-drop** — two independent systems share the same render cycle, both confined to Arrange mode (at rest, cards are links and drag natively):
 - *Card reordering* within a category: `getDragAfterElement()` uses 2D distance to the center of each card to handle multi-column grid layout. On drop, `syncCategoryOrderFromDOM()` reads DOM order and rewrites the `apps` array in-place.
 - *Category reordering*: `getCategoryDragAfterElement()` compares only vertical position (categories are single-column). On drop, `syncCategoryListOrderFromDOM()` rebuilds `categoryLabels` with keys in the new DOM order. The two drag systems are kept separate via `draggedFromCategory` and `draggedCategoryKey` flags.
-- A cancelled drag re-renders from state, so the DOM and `localStorage` can't silently diverge. Alt+arrow reorders by keyboard.
+- A cancelled drag re-renders from state, so the DOM and the saved state can't silently diverge. Alt+arrow reorders by keyboard.
 
 **Dialogs** — native `<dialog>` throughout, via the `askConfirm()` / `askText()` helpers. No `prompt()`, `confirm()` or `alert()` anywhere in the project; the native `<dialog>` brings a focus trap, Esc, backdrop dismissal and an inert background, and stays out of the tab order when closed.
 
-**Import/Export** — Export serializes `{ apps, categoryLabels }` as a dated JSON download. Import accepts either that combined format or a legacy plain `apps` array, **and this backward compatibility must be preserved** — export files are the owner's sync mechanism between devices. Before overwriting, the current state is snapshotted to `dashboardBackupPrev` and a Restore control appears.
+**Import/Export** — Export serializes `{ apps, categoryLabels }` as a dated JSON download. Import accepts either that combined format or a legacy plain `apps` array, **and this backward compatibility must be preserved** — export files are now the backup and migration path, and the owner's older exports must keep importing. Before overwriting, the current state is snapshotted to `dashboardBackupPrev` and a Restore control appears.
 
 **Building card DOM** — use `textContent`, never `innerHTML` with interpolated app data. Import is the sync path, so a tampered file would otherwise execute script on load.
 
