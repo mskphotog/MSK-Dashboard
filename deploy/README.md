@@ -5,9 +5,9 @@ The server is `server.py` (Python standard library + SQLite, nothing to install)
 ## First time
 
 ```bash
-git clone <repo-url> ~/msk-dashboard
+git clone <repo-url> ~/Projects/msk-dashboard
 mkdir -p ~/.config/systemd/user
-cp ~/msk-dashboard/deploy/msk-dashboard.service ~/.config/systemd/user/
+cp ~/Projects/msk-dashboard/deploy/msk-dashboard.service ~/.config/systemd/user/
 systemctl --user daemon-reload
 systemctl --user enable --now msk-dashboard
 loginctl enable-linger "$USER"        # start at boot, before you log in
@@ -18,7 +18,7 @@ Check it: `curl http://100.73.36.36:20006/api/dashboard` from any machine on the
 ## Updating
 
 ```bash
-cd ~/msk-dashboard && git pull && systemctl --user restart msk-dashboard
+cd ~/Projects/msk-dashboard && git pull && systemctl --user restart msk-dashboard
 ```
 
 The database lives outside the repo (`~/.local/share/msk-dashboard/dashboard.db`), so a pull never touches your data.
@@ -30,6 +30,8 @@ Each browser's data lives at its own origin, so the new address starts empty. On
 ## Backups
 
 The first change each day writes a snapshot to `~/.local/share/msk-dashboard/backups/` (14 days kept). To roll back, stop the service and copy a snapshot over `dashboard.db`.
+
+`backup.sh` (in the repo root) also takes a timestamped copy nightly and sends it to the Mac mini over Tailscale. Install its timer by creating `msk-backup.service` (`ExecStart=%h/Projects/msk-dashboard/backup.sh`) and `msk-backup.timer` (`OnCalendar=daily`) in `~/.config/systemd/user/`, then `systemctl --user enable --now msk-backup.timer`.
 
 ## Logs
 
