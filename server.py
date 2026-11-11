@@ -34,6 +34,7 @@ from datetime import datetime, timezone
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from urllib.parse import urlsplit
 
 HOST = os.environ.get("MSK_HOST", "100.73.36.36")
 PORT = int(os.environ.get("MSK_PORT", "20006"))
@@ -298,7 +299,43 @@ class Handler(BaseHTTPRequestHandler):
             self.wfile.write(data)
 
     def fail(self, status, message):
+        # If a PUT is refused before its body was read, the body is still
+        # sitting in the socket. With HTTP/1.1 keep-alive the connection would
+        # be reused, and the leftover JSON would be parsed as the start of the
+        # NEXT request, which then fails with "400 Bad request syntax". This
+        # matters behind `tailscale serve`, which pools its connections to us.
+        # Closing the connection after the reply throws the leftovers away.
+        if self.command == "PUT" and not getattr(self, "body_consumed", False):
+            self.close_connection = True
         self.send_json(status, {"error": message})
+
+    def same_origin(self, origin):
+        """True when the browser's Origin header names this same site.
+
+        Only the host and port are compared, never the scheme. The page can
+        be reached as plain http on the Tailscale IP or as https through
+        `tailscale serve`; both are this site. `tailscale serve` passes the
+        browser's Host through, and X-Forwarded-Host is also accepted in case
+        a proxy rewrites Host. A cross-site page still can't pass: the browser
+        sets Origin itself, and a page can't add custom headers to a PUT
+        without a preflight, which this server never answers."""
+        parts = urlsplit(origin)
+        if parts.scheme not in ("http", "https") or not parts.netloc:
+            return False
+        # The default port is usually left out of Origin and Host alike, but
+        # normalise anyway so "host" and "host:443" compare equal.
+        default = "443" if parts.scheme == "https" else "80"
+
+        def norm(netloc):
+            netloc = netloc.strip().lower()
+            if netloc.endswith(":" + default):
+                netloc = netloc[: -len(default) - 1]
+            return netloc
+
+        wanted = norm(parts.netloc)
+        candidates = [self.headers.get("Host", "")]
+        candidates += (self.headers.get("X-Forwarded-Host") or "").split(",")
+        return any(norm(c) == wanted for c in candidates if c.strip())
 
     def path_only(self):
         return self.path.split("?", 1)[0]
@@ -335,11 +372,17 @@ class Handler(BaseHTTPRequestHandler):
         if not route:
             return self.fail(HTTPStatus.NOT_FOUND, "not found")
 
+        # Fresh flag per request: has this request's body been read yet?
+        # fail() uses it to decide whether the connection must be closed.
+        self.body_consumed = False
+
         # Guard against another site in the browser writing to this server:
         # a cross-origin page can't send application/json without a preflight
         # (which we never answer), and a mismatched Origin is refused outright.
+        # The old check required "http://" + Host, so every save made from the
+        # https://...ts.net:8443 address was refused with 403.
         origin = self.headers.get("Origin")
-        if origin and origin != f"http://{self.headers.get('Host', '')}":
+        if origin and not self.same_origin(origin):
             return self.fail(HTTPStatus.FORBIDDEN, "cross-origin write refused")
         if not (self.headers.get("Content-Type") or "").startswith("application/json"):
             return self.fail(HTTPStatus.UNSUPPORTED_MEDIA_TYPE, "send application/json")
@@ -353,6 +396,7 @@ class Handler(BaseHTTPRequestHandler):
             return self.fail(HTTPStatus.REQUEST_ENTITY_TOO_LARGE, "body too large")
 
         raw = self.rfile.read(length)
+        self.body_consumed = True
         try:
             body = json.loads(raw)
             if not isinstance(body, dict):

@@ -116,7 +116,16 @@
                     hideNotice();
                     onConflict(latest);
                 } else if (!res.ok) {
-                    throw new Error('HTTP ' + res.status);
+                    // The server answered but said no. Mark the error so the
+                    // notice below can tell this apart from a network outage;
+                    // the old message blamed the network for every failure,
+                    // which hid a 403 for weeks.
+                    let detail = '';
+                    try { detail = (await res.json()).error || ''; } catch (e) { /* not JSON */ }
+                    const refused = new Error('HTTP ' + res.status);
+                    refused.status = res.status;
+                    refused.detail = detail;
+                    throw refused;
                 } else {
                     rev = (await res.json()).rev;
                     failures = 0;
@@ -126,7 +135,13 @@
                 dirty = true;
                 retry = true;
                 failures += 1;
-                showNotice('Not saved: can’t reach the server. Retrying…', 'Retry now', flush);
+                // err.status exists only when the server replied with an
+                // error; a fetch that never reached the server has none.
+                const message = err.status
+                    ? 'Not saved: the server refused the change (' + err.status +
+                      (err.detail ? ', ' + err.detail : '') + '). Retrying…'
+                    : 'Not saved: can’t reach the server. Retrying…';
+                showNotice(message, 'Retry now', flush);
             } finally {
                 inflight = false;
             }
